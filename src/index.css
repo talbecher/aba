@@ -1,9 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-accent: #f59e0b;
+}
+
+:root {
+  --bg-base: #0a0a0a;
+  --bg-card: #141414;
+  --bg-card-elevated: #1c1c1c;
+  --accent: #f59e0b;
+  --accent-dim: #f59e0b22;
+  --text-primary: #f5f5f5;
+  --text-secondary: #888888;
+  --text-muted: #444444;
+  --border: #222222;
+  --radius: 16px;
 }
 
 html,
@@ -13,5 +27,51 @@ body,
 }
 
 body {
-  @apply bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100;
+  font-family: 'Heebo', sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+@keyframes ribbon-slide-h {
+  from {
+    transform: translateY(-50%) scaleX(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-50%) scaleX(0);
+    opacity: 0;
+  }
+}
+
+@keyframes ribbon-slide-v {
+  from {
+    transform: translateX(-50%) scaleY(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-50%) scaleY(0);
+    opacity: 0;
+  }
+}
+
+@keyframes bow-fly {
+  from {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: scale(2) rotate(20deg);
+    opacity: 0;
+  }
+}
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

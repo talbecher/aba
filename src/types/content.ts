@@ -15,57 +15,51 @@ export interface WeekOverview {
   size_display: string
   emoji: string
   severity: Severity
-  tone_variants: ToneVariants
 }
 
-export interface Fact {
-  id: string
-  week: number
-  category: string
+export interface WeekSection extends ToneVariants {
   factual_text: string
-  severity: Severity
-  source: string | null
-  tone_variants: ToneVariants
 }
 
-export interface Action {
-  id: string
+export interface WeekData {
   week: number
-  factual_text: string
+  whats_happening: WeekSection
+  she_feels: WeekSection
+  dad_tip: WeekSection
+  wtf_fact: WeekSection
+  coming_next: string
   severity: Severity
-  tone_variants: ToneVariants
-}
-
-export interface WowFact {
-  id: string
-  week: number
-  factual_text: string
-  severity: Severity
-  source: string | null
-  tone_variants: ToneVariants
-}
-
-export interface RedFlag {
-  id: string
-  week: number
-  factual_text: string
-  severity: Severity
-  neutral_text: string
 }
 
 export type Verdict = 'green' | 'yellow' | 'red'
 
+export type AllowedCategory =
+  | 'fish'
+  | 'cheese'
+  | 'meat'
+  | 'drinks'
+  | 'eggs'
+  | 'exercise'
+  | 'travel'
+  | 'beauty'
+  | 'medicine'
+  | 'other'
+
 export interface AllowedItem {
   verdict: Verdict
   item: string
+  emoji: string
   short: string
   aba_translation: string
+  category: AllowedCategory
+  dad_action: string
 }
 
 export interface DictionaryTerm {
   term: string
   plain: string
   aba_translation: string
+  dad_action: string
 }
 
 export interface SizeComparison {

@@ -5,6 +5,8 @@ export type AnalyticsEvent =
   | 'action_checked'
   | 'sos_opened'
   | 'return_visit'
+  | 'share_card_shared'
+  | 'share_card_downloaded'
 
 export function trackEvent(
   event: AnalyticsEvent,

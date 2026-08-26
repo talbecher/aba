@@ -5,7 +5,7 @@ export const sosItems: SosItem[] = [
     id: 'sos-crying',
     class: 'couple',
     emoji: '😭',
-    label: 'היא בוכה',
+    label: 'בוכה בלי סיבה',
     severity: 1,
     answer_variants: {
       bro: 'אל תנסה לתקן את זה. תשב לידה, תשתוק, תן לזה לעבור.',
@@ -24,7 +24,7 @@ export const sosItems: SosItem[] = [
     id: 'sos-nausea',
     class: 'couple',
     emoji: '🤢',
-    label: 'היא בחילות',
+    label: 'בחילות',
     severity: 1,
     answer_variants: {
       bro: 'בחילות זה נורמלי. תביא לה קרקר ותוריד ריחות. אל תבשל דגים עכשיו.',
@@ -43,7 +43,7 @@ export const sosItems: SosItem[] = [
     id: 'sos-irritable',
     class: 'couple',
     emoji: '😤',
-    label: 'היא עצבנית',
+    label: 'עצבנות פתאומית',
     severity: 1,
     answer_variants: {
       bro: 'זה לא עליך, גם אם זה מרגיש ככה. אל תיקח את זה אישית.',
@@ -61,7 +61,7 @@ export const sosItems: SosItem[] = [
     id: 'sos-insomnia',
     class: 'couple',
     emoji: '😴',
-    label: 'לא ישנה',
+    label: 'קשיי שינה',
     severity: 1,
     answer_variants: {
       bro: 'קשיי שינה נפוצים עכשיו. תעזור עם כרית, תעמעם מסך.',
@@ -79,7 +79,7 @@ export const sosItems: SosItem[] = [
     id: 'sos-back-pain',
     class: 'couple',
     emoji: '💢',
-    label: 'כואב לה הגב',
+    label: 'כאבי גב',
     severity: 1,
     answer_variants: {
       bro: 'גב תחתון סובל ככל שהבטן גדלה. עיסוי קל עוזר. שאל אם הכאב חד.',
@@ -98,7 +98,7 @@ export const sosItems: SosItem[] = [
     id: 'sos-medical',
     class: 'medical',
     emoji: '🚨',
-    label: 'משהו לא תקין',
+    label: 'משהו מדאיג',
     severity: 3,
     answer:
       'אם משהו לא מרגיש תקין ואינך בטוח מה לעשות — אל תחכה ואל תנחש. פנה לצוות המטפל, ובמקרה דחוף התקשר 101.',

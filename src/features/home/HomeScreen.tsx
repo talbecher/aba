@@ -1,23 +1,37 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import html2canvas from 'html2canvas-pro'
 import { useCurrentWeek } from '../../hooks/useCurrentWeek'
 import { useWeekContent } from '../../hooks/useWeekContent'
 import { useUserStore } from '../../store/useUserStore'
 import { trackEvent } from '../../lib/analytics'
 import ToneSwitcher from '../../components/ToneSwitcher'
 import BottomSheet from '../../components/BottomSheet'
+import ShareCard from '../../components/ShareCard'
+import BellyReveal from './BellyReveal'
 import { sosItems } from '../../content/sos'
+import type { Tone } from '../../types/user'
+import type { WeekData } from '../../types/content'
 
 type Tab = 'baby' | 'she' | 'dad' | 'wow'
+type WeekSectionKey = 'whats_happening' | 'she_feels' | 'dad_tip' | 'wtf_fact'
 
-const TABS_COMING_SOON = 'תוכן מלא לשבוע זה מגיע בקרוב 🥜'
-const ACTIONS_COMING_SOON = 'משימות לשבוע זה מגיעות בקרוב'
-const CHEAT_CODE_COMING_SOON = 'Cheat Code לשבוע זה מגיע בקרוב'
+const TABS: { id: Tab; label: string; field: WeekSectionKey }[] = [
+  { id: 'baby', label: 'בוטן', field: 'whats_happening' },
+  { id: 'she', label: 'היא', field: 'she_feels' },
+  { id: 'dad', label: 'אתה', field: 'dad_tip' },
+  { id: 'wow', label: 'WOW', field: 'wtf_fact' },
+]
+
+const SAFETY_NOTE =
+  'אם מופיע דימום, כאב בטן חד שאינו חולף, או ירידת נוזלים — לא מחכים ולא מנחשים. פונים לצוות המטפל.'
+
+function tabText(data: WeekData, field: WeekSectionKey, tone: Tone): string {
+  return data[field][tone]
+}
 
 function HomeScreen() {
   const week = useCurrentWeek()
   const tone = useUserStore((state) => state.tone)
-  const completedActionIds = useUserStore((state) => state.completed_action_ids)
-  const toggleAction = useUserStore((state) => state.toggleAction)
   const dueDate = useUserStore((state) => state.due_date)
   const manualWeekOverride = useUserStore((state) => state.manual_week_override)
   const setDueDate = useUserStore((state) => state.setDueDate)
@@ -25,7 +39,7 @@ function HomeScreen() {
     (state) => state.setManualWeekOverride,
   )
   const showManualWeekNotice = !dueDate && manualWeekOverride !== null
-  const content = useWeekContent(week, tone)
+  const content = useWeekContent(week)
 
   const [tab, setTab] = useState<Tab>('baby')
   const [openSosId, setOpenSosId] = useState<string | null>(null)
@@ -33,21 +47,58 @@ function HomeScreen() {
   const [dueDateInput, setDueDateInput] = useState(dueDate ?? '')
   const [weekSlider, setWeekSlider] = useState(manualWeekOverride ?? week)
 
-  const sheFeels = content.experience.tone_variants[tone]
-  const dadTip = content.actions
-    .map((action) => action.tone_variants[tone])
-    .join('\n\n')
-  const wtfFact = content.wow.tone_variants[tone]
-  const dailyLine = content.dailyLine[tone]
+  const activeTab = TABS.find((t) => t.id === tab)!
+  const activeTabText = tabText(content.data, activeTab.field, tone)
 
-  const tabContent: Record<Tab, string> = {
-    baby: '',
-    she: sheFeels,
-    dad: dadTip,
-    wow: wtfFact,
+  const shareCardRef = useRef<HTMLDivElement>(null)
+  const [sharePreview, setSharePreview] = useState<{
+    dataUrl: string
+    blob: Blob
+  } | null>(null)
+
+  const handleOpenSharePreview = async () => {
+    if (!shareCardRef.current) return
+
+    try {
+      const canvas = await html2canvas(shareCardRef.current, {
+        backgroundColor: '#1A1A1A',
+      })
+
+      canvas.toBlob((blob) => {
+        if (!blob) return
+        setSharePreview({ dataUrl: canvas.toDataURL('image/png'), blob })
+      }, 'image/png')
+    } catch (err) {
+      console.error('[handleShare] capture failed', err)
+    }
   }
 
-  const hasFullContent = content.banner === null
+  const handleConfirmShare = async () => {
+    if (!sharePreview) return
+    const file = new File([sharePreview.blob], 'aba-share.png', {
+      type: 'image/png',
+    })
+
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'Aba' })
+        trackEvent('share_card_shared')
+      } catch {
+        // user cancelled the share sheet
+      }
+      setSharePreview(null)
+      return
+    }
+
+    const url = URL.createObjectURL(sharePreview.blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'aba-share.png'
+    a.click()
+    URL.revokeObjectURL(url)
+    trackEvent('share_card_downloaded')
+    setSharePreview(null)
+  }
 
   const handleSosToggle = (id: string) => {
     const opening = openSosId !== id
@@ -65,26 +116,31 @@ function HomeScreen() {
   }
 
   return (
-    <div className="relative mx-auto min-h-dvh w-full max-w-[390px] bg-white pb-24 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <header className="relative flex flex-col gap-1 p-4 pl-12">
-        <button
-          type="button"
-          onClick={() => {
-            setDueDateInput(dueDate ?? '')
-            setWeekSlider(manualWeekOverride ?? week)
-            setSettingsOpen(true)
-          }}
-          aria-label="עדכן שבוע"
-          className="absolute left-4 top-4 text-xl"
-        >
-          ⚙️
-        </button>
-        <h1 className="text-lg font-semibold">
-          שבוע {week} | Aba
-        </h1>
+    <div className="relative mx-auto min-h-dvh w-full max-w-[390px] bg-[var(--bg-base)] pb-24 text-[var(--text-primary)]">
+      <header className="flex flex-col gap-3 border-b border-[var(--border)] px-5 pb-4 pt-5">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[14px] font-bold uppercase tracking-[0.15em] text-[var(--text-secondary)]">
+              שבוע {week}
+            </p>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">Aba</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setDueDateInput(dueDate ?? '')
+              setWeekSlider(manualWeekOverride ?? week)
+              setSettingsOpen(true)
+            }}
+            aria-label="עדכן שבוע"
+            className="text-xl text-[var(--text-secondary)]"
+          >
+            ⚙️
+          </button>
+        </div>
         <ToneSwitcher />
         {showManualWeekNotice && (
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-[var(--text-muted)]">
             תוכן מוצג לשבוע {week} — עדכן שבוע בהגדרות
           </p>
         )}
@@ -140,152 +196,129 @@ function HomeScreen() {
         </div>
       </BottomSheet>
 
-      {content.banner && (
-        <div className="mx-4 mb-2 rounded-xl border border-neutral-700 bg-neutral-900 px-3 py-2 text-center text-xs text-neutral-400">
-          {content.banner}
-        </div>
-      )}
+      <BellyReveal
+        week={week}
+        sizeItem={content.overview.size_item}
+        sizeDisplay={content.overview.size_display}
+        sizePunchline={content.overview.size_punchline}
+        sizeValue={content.overview.size_value}
+        onShare={handleOpenSharePreview}
+      />
 
-      <section
-        onClick={() => trackEvent('visualization_opened')}
-        className="mx-4 flex flex-col items-center gap-2 rounded-2xl border border-neutral-800 bg-neutral-900 p-6 text-center"
+      <BottomSheet
+        open={sharePreview !== null}
+        onClose={() => setSharePreview(null)}
       >
-        <p className="text-sm text-neutral-400">הבוטן השבוע בגודל של</p>
-        <h2 className="text-2xl font-extrabold">{content.overview.size_item}</h2>
-
-        <div className="my-2 text-[64px] leading-none" aria-hidden="true">
-          {content.overview.emoji}
-        </div>
-
-        <span className="text-lg font-semibold text-accent">
-          {content.overview.size_display}
-        </span>
-        <p className="text-sm italic text-neutral-400">
-          {content.overview.size_punchline}
-        </p>
-        <span className="mt-1 text-[10px] text-neutral-600">המחשה בלבד</span>
-      </section>
-
-      <nav className="mx-4 mt-6 grid grid-cols-4 gap-2">
-        <button
-          type="button"
-          onClick={() => setTab('baby')}
-          className={`rounded-xl p-2 text-sm ${tab === 'baby' ? 'bg-accent text-neutral-950' : 'bg-neutral-900 text-neutral-300'}`}
-        >
-          🥜 בוטן
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('she')}
-          className={`rounded-xl p-2 text-sm ${tab === 'she' ? 'bg-accent text-neutral-950' : 'bg-neutral-900 text-neutral-300'}`}
-        >
-          👩 היא
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('dad')}
-          className={`rounded-xl p-2 text-sm ${tab === 'dad' ? 'bg-accent text-neutral-950' : 'bg-neutral-900 text-neutral-300'}`}
-        >
-          👨 אתה
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('wow')}
-          className={`rounded-xl p-2 text-sm ${tab === 'wow' ? 'bg-accent text-neutral-950' : 'bg-neutral-900 text-neutral-300'}`}
-        >
-          🤯 WOW
-        </button>
-      </nav>
-
-      {!hasFullContent ? (
-        <section className="mx-4 mt-3 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 text-center text-sm text-neutral-400">
-          {TABS_COMING_SOON}
-        </section>
-      ) : tab === 'baby' ? (
-        <section className="mx-4 mt-3 flex flex-col gap-2">
-          {content.facts.map((fact) => (
-            <div
-              key={fact.id}
-              className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 text-sm leading-relaxed"
-            >
-              {fact.tone_variants[tone]}
+        {sharePreview && (
+          <div className="flex flex-col gap-4">
+            <h2 className="text-center text-lg font-bold">תצוגה מקדימה</h2>
+            <img
+              src={sharePreview.dataUrl}
+              alt="תצוגה מקדימה של הכרטיס לשיתוף"
+              className="w-full rounded-2xl"
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setSharePreview(null)}
+                className="flex-1 rounded-xl border border-neutral-700 p-3 font-semibold text-neutral-300"
+              >
+                סגור
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmShare}
+                className="flex-1 rounded-xl bg-accent p-3 font-semibold text-neutral-950"
+              >
+                שתף
+              </button>
             </div>
-          ))}
-        </section>
-      ) : (
-        <section className="mx-4 mt-3 whitespace-pre-line rounded-2xl border border-neutral-800 bg-neutral-900 p-4 text-sm leading-relaxed">
-          {tabContent[tab]}
-        </section>
-      )}
-
-      <section className="mx-4 mt-6 rounded-2xl border border-accent/40 bg-accent/10 p-4">
-        <h2 className="mb-2 text-sm font-semibold">💬 Cheat Code להיום</h2>
-        <p className="text-sm leading-relaxed">
-          {hasFullContent ? dailyLine : CHEAT_CODE_COMING_SOON}
-        </p>
-      </section>
-
-      <section className="mx-4 mt-6">
-        <h2 className="mb-2 text-sm font-semibold">✅ מה עושים השבוע</h2>
-        {hasFullContent ? (
-          <div className="flex flex-col gap-2">
-            {content.actions.map((action) => {
-              const checked = completedActionIds.includes(action.id)
-              return (
-                <label
-                  key={action.id}
-                  className="flex items-start gap-3 rounded-xl border border-neutral-800 bg-neutral-900 p-3 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => {
-                      toggleAction(action.id)
-                      trackEvent('action_checked', { id: action.id })
-                    }}
-                    className="mt-1 h-4 w-4 accent-accent"
-                  />
-                  <span
-                    className={checked ? 'text-neutral-500 line-through' : ''}
-                  >
-                    {action.tone_variants[tone]}
-                  </span>
-                </label>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 text-center text-sm text-neutral-400">
-            {ACTIONS_COMING_SOON}
           </div>
         )}
+      </BottomSheet>
+
+      <div
+        aria-hidden="true"
+        style={{ position: 'fixed', top: -9999, left: -9999, pointerEvents: 'none' }}
+      >
+        <ShareCard
+          ref={shareCardRef}
+          week={week}
+          emoji={content.overview.emoji}
+          sizeItem={content.overview.size_item}
+          sizePunchline={content.overview.size_punchline}
+          sizeDisplay={content.overview.size_display}
+        />
+      </div>
+
+      <nav className="mx-5 mt-6 flex gap-2">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+              tab === t.id
+                ? 'bg-accent text-neutral-950'
+                : 'border border-[var(--border)] text-[var(--text-secondary)]'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </nav>
+
+      <section className="mx-5 mt-4 whitespace-pre-line rounded-2xl bg-[var(--bg-card)] p-6 text-sm leading-relaxed text-[var(--text-primary)]">
+        {activeTabText}
       </section>
 
-      <section className="mx-4 mt-6 rounded-2xl border border-orange-400/40 p-4">
-        <h2 className="mb-1 text-sm font-semibold text-orange-400">
-          ⚠️ כדאי לדעת
+      <section
+        className="mx-5 mt-6 rounded-2xl border-r-[3px] border-accent p-5"
+        style={{ backgroundColor: 'var(--accent-dim)' }}
+      >
+        <h2 className="mb-2 text-sm font-semibold text-accent">
+          🔮 מה בהמשך
         </h2>
-        <p className="text-sm leading-relaxed text-neutral-300">
-          {content.redFlag.neutral_text}
+        <p className="text-base italic leading-relaxed text-[var(--text-primary)]">
+          {content.data.coming_next}
         </p>
       </section>
 
-      <section className="mx-4 mt-6">
-        <h2 className="mb-2 text-sm font-semibold">🔍 קרה משהו?</h2>
-        <div className="grid grid-cols-3 gap-2">
+      <section
+        className="mx-5 mt-6 flex items-start gap-3 rounded-2xl p-4"
+        style={{ border: '1px solid #F59E0B44' }}
+      >
+        <span className="text-lg">⚠️</span>
+        <div>
+          <h2 className="mb-1 text-sm font-semibold text-accent">
+            כדאי לדעת
+          </h2>
+          <p className="text-xs leading-relaxed text-[var(--text-secondary)]">
+            {SAFETY_NOTE}
+          </p>
+        </div>
+      </section>
+
+      <section className="mx-5 mt-6">
+        <h2 className="mb-2 text-sm font-semibold text-[var(--text-secondary)]">
+          🔍 קרה משהו?
+        </h2>
+        <div className="grid grid-cols-3 gap-3">
           {sosItems.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => handleSosToggle(item.id)}
-              className={`rounded-xl border p-2 text-xs ${
+              className={`flex flex-col items-center gap-1 rounded-2xl p-3 text-center ${
                 openSosId === item.id
-                  ? 'border-accent bg-accent/10'
-                  : 'border-neutral-800 bg-neutral-900'
+                  ? 'bg-accent/10 ring-1 ring-accent'
+                  : 'bg-[var(--bg-card-elevated)]'
               }`}
             >
-              <div className="text-lg">{item.emoji}</div>
-              <div>{item.label}</div>
+              <span className="text-2xl">{item.emoji}</span>
+              <span className="text-[11px] text-[var(--text-secondary)]">
+                {item.label}
+              </span>
             </button>
           ))}
         </div>
@@ -297,20 +330,25 @@ function HomeScreen() {
           return (
             <div
               key={`${item.id}-answer`}
-              className={`mt-3 rounded-2xl border p-4 text-sm leading-relaxed ${
+              className={`mt-3 rounded-2xl p-4 text-sm leading-relaxed ${
                 item.class === 'medical'
-                  ? 'border-orange-400/40 text-neutral-300'
-                  : 'border-neutral-800 bg-neutral-900'
+                  ? 'text-[var(--text-secondary)]'
+                  : 'bg-[var(--bg-card)] text-[var(--text-primary)]'
               }`}
+              style={
+                item.class === 'medical'
+                  ? { border: '1px solid #F59E0B44' }
+                  : undefined
+              }
             >
               <p>{answer}</p>
               {item.class === 'medical' && (
-                <p className="mt-2 font-semibold text-orange-400">
+                <p className="mt-2 font-semibold text-accent">
                   פנה לצוות המטפל
                 </p>
               )}
               {item.actions && (
-                <ul className="mt-3 flex flex-col gap-1 text-neutral-300">
+                <ul className="mt-3 flex flex-col gap-1 text-[var(--text-secondary)]">
                   {item.actions.map((step) => (
                     <li key={step}>• {step}</li>
                   ))}

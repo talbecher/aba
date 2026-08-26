@@ -28,6 +28,20 @@ export function getDueWeek(
   return DEFAULT_WEEK
 }
 
+export function getEstimatedDueDate(
+  dueDate: string | null,
+  manualWeekOverride: number | null,
+): Date {
+  if (dueDate) {
+    const due = new Date(dueDate)
+    if (!Number.isNaN(due.getTime())) return due
+  }
+
+  const week = getDueWeek(dueDate, manualWeekOverride)
+  const weeksRemaining = TOTAL_WEEKS - week
+  return new Date(Date.now() + weeksRemaining * MS_PER_WEEK)
+}
+
 export function calculateEddFromConception(conceptionMonth: string): string {
   const [year, month] = conceptionMonth.split('-').map(Number)
   const conceptionDate = new Date(year, month - 1, 1)
