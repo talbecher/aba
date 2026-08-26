@@ -14,13 +14,13 @@ function ToneSwitcher() {
           onClick={() => setTone(t.id)}
           aria-label={t.label}
           aria-pressed={tone === t.id}
-          className={`flex h-9 w-9 items-center justify-center rounded-full border text-lg ${
+          className={`rounded-[20px] px-[14px] py-1 text-[13px] ${
             tone === t.id
-              ? 'border-accent bg-accent/10'
-              : 'border-neutral-700 bg-neutral-900'
+              ? 'bg-accent font-bold text-black'
+              : 'border border-[#333333] text-[#666666]'
           }`}
         >
-          {t.emoji}
+          {t.emoji} {t.label}
         </button>
       ))}
     </div>

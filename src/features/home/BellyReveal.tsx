@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
-type Phase = 'closed' | 'opening' | 'revealed'
+type Phase = 'closed' | 'ribbon-h' | 'ribbon-v' | 'bow' | 'revealed'
+
+const STAGE_MS = 300
 
 interface BellyRevealProps {
   week: number
@@ -16,20 +18,87 @@ function embryoScale(week: number, totalWeeks: number): number {
   return 0.3 + Math.min(1, Math.max(0, week / totalWeeks)) * 0.7
 }
 
+function fetalStage(week: number): 1 | 2 | 3 | 4 {
+  if (week <= 8) return 1
+  if (week <= 16) return 2
+  if (week <= 28) return 3
+  return 4
+}
+
 function EmbryoSvg({ week, totalWeeks }: { week: number; totalWeeks: number }) {
   const scale = embryoScale(week, totalWeeks)
+  const stage = fetalStage(week)
 
   return (
     <svg viewBox="0 0 120 160" width="110" height="146" aria-hidden="true">
-      <ellipse cx="60" cy="90" rx="55" ry="65" fill="var(--bg-card-elevated)" />
-      <g transform={`translate(60 80) scale(${scale}) translate(-30 -40)`}>
-        <ellipse cx="20" cy="70" rx="7" ry="14" fill="#c4956a" transform="rotate(-10 20 70)" />
-        <ellipse cx="40" cy="70" rx="7" ry="14" fill="#c4956a" transform="rotate(10 40 70)" />
-        <ellipse cx="12" cy="50" rx="6" ry="12" fill="#c4956a" transform="rotate(-20 12 50)" />
-        <ellipse cx="48" cy="50" rx="6" ry="12" fill="#c4956a" transform="rotate(20 48 50)" />
-        <ellipse cx="30" cy="45" rx="18" ry="22" fill="#c4956a" />
-        <circle cx="30" cy="15" r="15" fill="#c4956a" />
+      <ellipse cx="60" cy="90" rx="55" ry="65" fill="var(--bg-elevated)" />
+      <g transform={`translate(60 85) scale(${scale})`}>
+        <g
+          style={{
+            animation: 'float-soft 4s ease-in-out infinite',
+            transformBox: 'fill-box',
+            transformOrigin: 'center',
+          }}
+        >
+          {stage === 1 && (
+            <>
+              <ellipse cx="0" cy="0" rx="16" ry="18" fill="#c4956a" />
+              <circle
+                cx="0"
+                cy="-2"
+                r="4"
+                fill="#EF4444"
+                style={{
+                  animation: 'heartbeat 1.1s ease-in-out infinite',
+                  transformBox: 'fill-box',
+                  transformOrigin: 'center',
+                }}
+              />
+            </>
+          )}
+
+          {stage === 2 && (
+            <>
+              <ellipse cx="0" cy="14" rx="14" ry="16" fill="#c4956a" />
+              <circle cx="0" cy="-14" r="17" fill="#c4956a" />
+              <ellipse cx="-13" cy="10" rx="4" ry="6" fill="#c4956a" transform="rotate(-20 -13 10)" />
+              <ellipse cx="13" cy="10" rx="4" ry="6" fill="#c4956a" transform="rotate(20 13 10)" />
+              <ellipse cx="-9" cy="26" rx="4" ry="7" fill="#c4956a" transform="rotate(-10 -9 26)" />
+              <ellipse cx="9" cy="26" rx="4" ry="7" fill="#c4956a" transform="rotate(10 9 26)" />
+            </>
+          )}
+
+          {stage === 3 && (
+            <>
+              <ellipse cx="0" cy="5" rx="18" ry="22" fill="#c4956a" />
+              <ellipse cx="-18" cy="-5" rx="6" ry="12" fill="#c4956a" transform="rotate(-20 -18 -5)" />
+              <ellipse cx="18" cy="-5" rx="6" ry="12" fill="#c4956a" transform="rotate(20 18 -5)" />
+              <ellipse cx="-10" cy="25" rx="7" ry="14" fill="#c4956a" transform="rotate(-10 -10 25)" />
+              <ellipse cx="10" cy="25" rx="7" ry="14" fill="#c4956a" transform="rotate(10 10 25)" />
+              <circle cx="0" cy="-25" r="15" fill="#c4956a" />
+            </>
+          )}
+
+          {stage === 4 && (
+            <>
+              <ellipse cx="4" cy="6" rx="22" ry="26" fill="#c4956a" transform="rotate(-8 4 6)" />
+              <ellipse cx="10" cy="28" rx="14" ry="12" fill="#c4956a" />
+              <circle cx="-6" cy="-24" r="15" fill="#c4956a" />
+              <ellipse cx="-8" cy="-4" rx="7" ry="11" fill="#c4956a" transform="rotate(25 -8 -4)" />
+            </>
+          )}
+        </g>
       </g>
+    </svg>
+  )
+}
+
+function BellySvg() {
+  return (
+    <svg viewBox="0 0 220 220" width="220" height="220" aria-hidden="true">
+      <circle cx="110" cy="110" r="105" fill="#c4956a" opacity="0.15" />
+      <circle cx="110" cy="110" r="90" fill="#111111" stroke="#1E1E1E" strokeWidth="2" />
+      <ellipse cx="110" cy="150" rx="7" ry="5" fill="#000000" opacity="0.4" />
     </svg>
   )
 }
@@ -47,57 +116,73 @@ function BellyReveal({
   const progress = Math.min(100, Math.max(0, (week / totalWeeks) * 100))
 
   useEffect(() => {
-    if (phase !== 'opening') return
-    const timer = setTimeout(() => setPhase('revealed'), 500)
-    return () => clearTimeout(timer)
+    if (phase === 'ribbon-h') {
+      const t = setTimeout(() => setPhase('ribbon-v'), STAGE_MS)
+      return () => clearTimeout(t)
+    }
+    if (phase === 'ribbon-v') {
+      const t = setTimeout(() => setPhase('bow'), STAGE_MS)
+      return () => clearTimeout(t)
+    }
+    if (phase === 'bow') {
+      const t = setTimeout(() => setPhase('revealed'), STAGE_MS)
+      return () => clearTimeout(t)
+    }
   }, [phase])
+
+  const hRibbonStyle: React.CSSProperties =
+    phase === 'ribbon-h'
+      ? { animation: `ribbon-h ${STAGE_MS}ms cubic-bezier(.4,0,.2,1) forwards` }
+      : phase === 'closed'
+        ? { transform: 'translateY(-50%) scaleX(1)' }
+        : { transform: 'translateY(-50%) scaleX(0)' }
+
+  const vRibbonStyle: React.CSSProperties =
+    phase === 'ribbon-v'
+      ? { animation: `ribbon-v ${STAGE_MS}ms cubic-bezier(.4,0,.2,1) forwards` }
+      : phase === 'closed' || phase === 'ribbon-h'
+        ? { transform: 'translateX(-50%) scaleY(1)' }
+        : { transform: 'translateX(-50%) scaleY(0)' }
+
+  const bowStyle: React.CSSProperties | undefined =
+    phase === 'bow'
+      ? { animation: `bow-fly ${STAGE_MS}ms cubic-bezier(.4,0,.2,1) forwards` }
+      : undefined
 
   return (
     <section className="mx-5 mt-5 flex flex-col items-center gap-3">
       {phase !== 'revealed' ? (
         <button
           type="button"
-          onClick={() => phase === 'closed' && setPhase('opening')}
+          onClick={() => phase === 'closed' && setPhase('ribbon-h')}
           aria-label="גלה את גודל הבוטן השבוע"
-          className="relative flex h-[220px] w-[220px] items-center justify-center rounded-full"
-          style={{ backgroundColor: '#141414', border: '1px solid #222222' }}
+          className="flex flex-col items-center gap-2"
         >
-          <span
-            className="absolute right-0 top-1/2 h-4 w-full bg-accent"
-            style={{
-              transform: 'translateY(-50%) scaleX(1)',
-              transformOrigin: 'center',
-              ...(phase === 'opening'
-                ? { animation: 'ribbon-slide-h 500ms cubic-bezier(.4,0,.2,1) forwards' }
-                : {}),
-            }}
-          />
-          <span
-            className="absolute left-1/2 top-0 h-full w-4 bg-accent"
-            style={{
-              transform: 'translateX(-50%) scaleY(1)',
-              transformOrigin: 'center',
-              ...(phase === 'opening'
-                ? { animation: 'ribbon-slide-v 500ms cubic-bezier(.4,0,.2,1) forwards' }
-                : {}),
-            }}
-          />
-          <span
-            className="absolute -top-3 left-1/2 -translate-x-1/2 text-4xl"
-            style={
-              phase === 'opening'
-                ? { animation: 'bow-fly 500ms cubic-bezier(.4,0,.2,1) forwards' }
-                : undefined
-            }
-          >
-            🎀
-          </span>
+          <div className="relative flex h-[220px] w-[220px] items-center justify-center">
+            <BellySvg />
+            <span
+              className="absolute right-0 top-1/2 h-4 w-full bg-accent"
+              style={{ transformOrigin: 'center', ...hRibbonStyle }}
+            />
+            <span
+              className="absolute left-1/2 top-0 h-full w-4 bg-accent"
+              style={{ transformOrigin: 'center', ...vRibbonStyle }}
+            />
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl" style={bowStyle}>
+              🎀
+            </span>
+          </div>
+          {phase === 'closed' && (
+            <p className="text-xs text-[var(--text-secondary)]">
+              לחץ לגלות את השבוע שלך
+            </p>
+          )}
         </button>
       ) : (
         <div className="flex w-full gap-3" style={{ animation: 'reveal-in 400ms ease-out forwards' }}>
           <div
             className="flex flex-1 flex-col items-center gap-2 rounded-2xl p-4 text-center"
-            style={{ backgroundColor: '#141414', border: '1px solid #222222' }}
+            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
           >
             <p className="text-xs text-[var(--text-secondary)]">איך הבוטן נראה</p>
             <EmbryoSvg week={week} totalWeeks={totalWeeks} />
@@ -106,16 +191,16 @@ function BellyReveal({
 
           <div
             className="flex flex-1 flex-col items-center justify-center gap-2 rounded-2xl p-4 text-center"
-            style={{ backgroundColor: '#141414', border: '1px solid #222222' }}
+            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
           >
             <p className="text-xs text-[var(--text-secondary)]">גודל השבוע</p>
-            <h2 className="text-[28px] font-black leading-tight text-white">
+            <h2 className="text-[32px] font-black leading-tight text-white">
               {sizeItem}
             </h2>
-            <span className="text-lg font-semibold text-accent">
+            <span className="text-[22px] font-bold text-accent">
               {sizeDisplay}
             </span>
-            <p className="text-sm italic text-[var(--text-secondary)]">
+            <p className="text-[16px] italic text-[var(--text-secondary)]">
               {sizePunchline}
             </p>
           </div>

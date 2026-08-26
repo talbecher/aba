@@ -8,15 +8,16 @@
 }
 
 :root {
-  --bg-base: #0a0a0a;
-  --bg-card: #141414;
-  --bg-card-elevated: #1c1c1c;
+  --font: 'Heebo', sans-serif;
+  --bg: #0a0a0a;
+  --bg-card: #111111;
+  --bg-elevated: #181818;
   --accent: #f59e0b;
-  --accent-dim: #f59e0b22;
-  --text-primary: #f5f5f5;
+  --accent-dim: rgba(245, 158, 11, 0.12);
+  --text: #f0f0f0;
   --text-secondary: #888888;
   --text-muted: #444444;
-  --border: #222222;
+  --border: #1e1e1e;
   --radius: 16px;
 }
 
@@ -27,30 +28,36 @@ body,
 }
 
 body {
-  font-family: 'Heebo', sans-serif;
-  background: var(--bg-base);
-  color: var(--text-primary);
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }
 
-@keyframes ribbon-slide-h {
+.section-heading {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+@keyframes ribbon-h {
   from {
     transform: translateY(-50%) scaleX(1);
-    opacity: 1;
   }
   to {
     transform: translateY(-50%) scaleX(0);
-    opacity: 0;
   }
 }
 
-@keyframes ribbon-slide-v {
+@keyframes ribbon-v {
   from {
     transform: translateX(-50%) scaleY(1);
-    opacity: 1;
   }
   to {
     transform: translateX(-50%) scaleY(0);
-    opacity: 0;
   }
 }
 
@@ -68,10 +75,36 @@ body {
 @keyframes reveal-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes heartbeat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.25);
+  }
+  50% {
+    transform: scale(1);
+  }
+  70% {
+    transform: scale(1.15);
   }
 }

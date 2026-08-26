@@ -60,7 +60,7 @@ const TYPE_STYLE: Record<
   },
   action: {
     border: 'border-neutral-600/30',
-    bg: 'bg-[var(--bg-card-elevated)]',
+    bg: 'bg-[var(--bg-elevated)]',
     text: 'text-[var(--text-secondary)]',
   },
 }
@@ -119,7 +119,7 @@ function TimelineScreen() {
   }, [currentColumnKey])
 
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-[390px] bg-[var(--bg-base)] pb-24 text-[var(--text-primary)]">
+    <div className="mx-auto min-h-dvh w-full max-w-[390px] bg-[var(--bg)] pb-24 text-[var(--text)]">
       <header className="p-5">
         <h1 className="text-xl font-bold">📅 הדרך</h1>
         <div className="mt-2 flex gap-3 text-[11px] text-[var(--text-secondary)]">

@@ -12,8 +12,16 @@ function BottomNav() {
   const { pathname } = useLocation()
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[#0A0A0A]/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-[390px] items-center justify-between px-2 py-2">
+    <nav
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)]"
+      style={{
+        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        padding: '8px 0 20px',
+      }}
+    >
+      <div className="mx-auto flex max-w-[390px] items-center justify-between px-2">
         {TABS.map((tab) => {
           const active = pathname === tab.path
           return (
@@ -21,12 +29,14 @@ function BottomNav() {
               key={tab.path}
               type="button"
               onClick={() => navigate(tab.path)}
-              className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1 text-xs ${
-                active ? 'text-accent' : 'text-[var(--text-secondary)]'
+              className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1 ${
+                active
+                  ? 'font-bold text-accent'
+                  : 'text-[var(--text-muted)]'
               }`}
             >
-              <span className="text-lg">{tab.emoji}</span>
-              <span>{tab.label}</span>
+              <span className="text-[22px]">{tab.emoji}</span>
+              <span className="text-[10px]">{tab.label}</span>
             </button>
           )
         })}

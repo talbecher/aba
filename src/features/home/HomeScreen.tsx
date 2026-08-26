@@ -116,15 +116,9 @@ function HomeScreen() {
   }
 
   return (
-    <div className="relative mx-auto min-h-dvh w-full max-w-[390px] bg-[var(--bg-base)] pb-24 text-[var(--text-primary)]">
+    <div className="relative mx-auto min-h-dvh w-full max-w-[390px] bg-[var(--bg)] pb-24 text-[var(--text)]">
       <header className="flex flex-col gap-3 border-b border-[var(--border)] px-5 pb-4 pt-5">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-[14px] font-bold uppercase tracking-[0.15em] text-[var(--text-secondary)]">
-              שבוע {week}
-            </p>
-            <p className="mt-0.5 text-xs text-[var(--text-muted)]">Aba</p>
-          </div>
+        <div className="relative flex h-6 items-center justify-center">
           <button
             type="button"
             onClick={() => {
@@ -133,10 +127,14 @@ function HomeScreen() {
               setSettingsOpen(true)
             }}
             aria-label="עדכן שבוע"
-            className="text-xl text-[var(--text-secondary)]"
+            className="absolute left-0 text-xl text-[var(--text-secondary)]"
           >
             ⚙️
           </button>
+          <p className="text-[18px] font-black text-accent">Aba</p>
+          <p className="absolute right-0 text-xs text-[var(--text-secondary)]">
+            שבוע {week}
+          </p>
         </div>
         <ToneSwitcher />
         {showManualWeekNotice && (
@@ -257,62 +255,59 @@ function HomeScreen() {
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+            className={`rounded-[20px] border px-4 py-2 text-sm font-semibold transition-colors ${
               tab === t.id
-                ? 'bg-accent text-neutral-950'
-                : 'border border-[var(--border)] text-[var(--text-secondary)]'
+                ? 'border-accent text-accent'
+                : 'border-[var(--border)] text-[var(--text-muted)]'
             }`}
+            style={tab === t.id ? { backgroundColor: 'var(--accent-dim)' } : undefined}
           >
             {t.label}
           </button>
         ))}
       </nav>
 
-      <section className="mx-5 mt-4 whitespace-pre-line rounded-2xl bg-[var(--bg-card)] p-6 text-sm leading-relaxed text-[var(--text-primary)]">
+      <section className="mx-5 mt-4 whitespace-pre-line rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4 text-[16px] leading-[1.7] text-[var(--text)]">
         {activeTabText}
       </section>
 
       <section
-        className="mx-5 mt-6 rounded-2xl border-r-[3px] border-accent p-5"
+        className="mx-5 mt-6 rounded-2xl border-r-[3px] border-accent px-4 py-[14px]"
         style={{ backgroundColor: 'var(--accent-dim)' }}
       >
         <h2 className="mb-2 text-sm font-semibold text-accent">
           🔮 מה בהמשך
         </h2>
-        <p className="text-base italic leading-relaxed text-[var(--text-primary)]">
+        <p className="text-[16px] italic leading-relaxed text-[var(--text)]">
           {content.data.coming_next}
         </p>
       </section>
 
       <section
-        className="mx-5 mt-6 flex items-start gap-3 rounded-2xl p-4"
-        style={{ border: '1px solid #F59E0B44' }}
+        className="mx-5 mt-6 flex items-center gap-2 rounded-xl px-4 py-3"
+        style={{
+          backgroundColor: 'rgba(245,158,11,0.06)',
+          border: '1px solid rgba(245,158,11,0.25)',
+        }}
       >
-        <span className="text-lg">⚠️</span>
-        <div>
-          <h2 className="mb-1 text-sm font-semibold text-accent">
-            כדאי לדעת
-          </h2>
-          <p className="text-xs leading-relaxed text-[var(--text-secondary)]">
-            {SAFETY_NOTE}
-          </p>
-        </div>
+        <span>⚠️</span>
+        <p className="text-xs leading-relaxed text-[var(--text-secondary)]">
+          {SAFETY_NOTE}
+        </p>
       </section>
 
       <section className="mx-5 mt-6">
-        <h2 className="mb-2 text-sm font-semibold text-[var(--text-secondary)]">
-          🔍 קרה משהו?
-        </h2>
+        <h2 className="section-heading">🔍 קרה משהו?</h2>
         <div className="grid grid-cols-3 gap-3">
           {sosItems.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => handleSosToggle(item.id)}
-              className={`flex flex-col items-center gap-1 rounded-2xl p-3 text-center ${
+              className={`flex flex-col items-center gap-1 rounded-xl border px-2 py-3 text-center transition-colors hover:border-accent ${
                 openSosId === item.id
-                  ? 'bg-accent/10 ring-1 ring-accent'
-                  : 'bg-[var(--bg-card-elevated)]'
+                  ? 'border-accent bg-accent/10'
+                  : 'border-[var(--border)] bg-[var(--bg-elevated)]'
               }`}
             >
               <span className="text-2xl">{item.emoji}</span>
@@ -333,11 +328,11 @@ function HomeScreen() {
               className={`mt-3 rounded-2xl p-4 text-sm leading-relaxed ${
                 item.class === 'medical'
                   ? 'text-[var(--text-secondary)]'
-                  : 'bg-[var(--bg-card)] text-[var(--text-primary)]'
+                  : 'bg-[var(--bg-card)] text-[var(--text)]'
               }`}
               style={
                 item.class === 'medical'
-                  ? { border: '1px solid #F59E0B44' }
+                  ? { border: '1px solid rgba(245,158,11,0.25)' }
                   : undefined
               }
             >

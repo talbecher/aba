@@ -110,12 +110,11 @@ function DidYouKnowScreen() {
   }
 
   const resultFact = result !== null ? wtfFacts[result] : null
-  const resultColor = result !== null ? colorForIndex(result, total) : undefined
 
   return (
     <div
-      className="mx-auto flex min-h-dvh w-full max-w-[390px] flex-col items-center gap-5 px-5 pb-24 pt-5 text-[var(--text-primary)]"
-      style={{ backgroundColor: '#0A0A0A' }}
+      className="mx-auto flex min-h-dvh w-full max-w-[390px] flex-col items-center gap-5 px-5 pb-24 pt-5 text-[var(--text)]"
+      style={{ backgroundColor: 'var(--bg)' }}
     >
       <header>
         <h1 className="text-lg font-bold">🎯 ידעת?</h1>
@@ -139,6 +138,8 @@ function DidYouKnowScreen() {
           onTransitionEnd={handleTransitionEnd}
           className="rounded-full"
           style={{
+            border: '2px solid var(--accent)',
+            boxShadow: '0 0 30px rgba(245,158,11,0.15)',
             transform: `rotate(${rotation}deg)`,
             transition: `transform ${duration}s cubic-bezier(0.25, 0.1, 0.25, 1)`,
           }}
@@ -149,7 +150,7 @@ function DidYouKnowScreen() {
         type="button"
         onClick={handleSpin}
         disabled={spinning}
-        className="w-full rounded-full bg-accent py-4 text-lg font-extrabold text-neutral-950 disabled:opacity-50"
+        className="w-full rounded-full bg-accent py-4 text-lg font-black text-black disabled:opacity-50"
       >
         {spinning ? 'מסתובב...' : '⚡ סובב'}
       </button>
@@ -158,8 +159,8 @@ function DidYouKnowScreen() {
         <div
           className="w-full rounded-2xl p-6 text-center"
           style={{
-            backgroundColor: '#141414',
-            border: `2px solid ${resultColor}`,
+            backgroundColor: 'var(--bg-card)',
+            border: '2px solid var(--accent)',
           }}
         >
           <p className="text-[20px] font-black leading-tight text-white">
