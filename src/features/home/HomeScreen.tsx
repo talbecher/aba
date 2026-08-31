@@ -1,16 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCurrentWeek } from '../../hooks/useCurrentWeek'
-import { useWeekContent } from '../../hooks/useWeekContent'
 import { useJourneyPreview } from '../../hooks/useJourneyPreview'
 import { useUserStore } from '../../store/useUserStore'
-import { downloadIcsEvent } from '../../lib/ics'
+import { openGoogleCalendarEvent } from '../../lib/calendar'
+import { tasks } from '../../content/tasks'
 import BottomSheet from '../../components/BottomSheet'
+import PreparationDetail from '../../components/PreparationDetail'
 import WeeklyReveal from '../reveal/WeeklyReveal'
-import type { Tone } from '../../types/user'
 
 const TOTAL_WEEKS = 40
-const DEFAULT_TONE: Tone = 'bro' // טון אחיד: קליל, ישיר, קצת ציני
+const BONUS_TASK_COUNT = 3
 
 function getTrimester(week: number): 1 | 2 | 3 {
   if (week <= 13) return 1
@@ -29,24 +29,37 @@ function HomeScreen() {
   )
   const completedTasks = useUserStore((state) => state.completedTasks)
   const toggleCompletedTask = useUserStore((state) => state.toggleCompletedTask)
+  const currentTaskIndex = useUserStore((state) => state.currentTaskIndex)
+  const setCurrentTaskIndex = useUserStore((state) => state.setCurrentTaskIndex)
   const addPlannedEvent = useUserStore((state) => state.addPlannedEvent)
   const showManualWeekNotice = !dueDate && manualWeekOverride !== null
-  const content = useWeekContent(week)
   const { next, upNext } = useJourneyPreview()
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [dueDateInput, setDueDateInput] = useState(dueDate ?? '')
   const [weekSlider, setWeekSlider] = useState(manualWeekOverride ?? week)
-  const [taskDismissed, setTaskDismissed] = useState(false)
+  const [prepOpen, setPrepOpen] = useState(false)
+  const [showBonusTasks, setShowBonusTasks] = useState(false)
 
-  const taskId = `daily-task-week-${week}`
-  const isTaskDone = completedTasks.includes(taskId)
   const trimester = getTrimester(week)
   const percent = Math.round((week / TOTAL_WEEKS) * 100)
   const remainingWeeks = TOTAL_WEEKS - week
 
+  const relevantTasks = useMemo(
+    () => tasks.filter((t) => t.week_start <= week && week <= t.week_end),
+    [week],
+  )
+  const bonusTasks = useMemo(
+    () => tasks.filter((t) => !(t.week_start <= week && week <= t.week_end)).slice(0, BONUS_TASK_COUNT),
+    [week],
+  )
+  const activeTask = relevantTasks[currentTaskIndex] ?? null
+  const isExhausted = relevantTasks.length > 0 && currentTaskIndex >= relevantTasks.length
+
   useEffect(() => {
-    setTaskDismissed(false)
+    setCurrentTaskIndex(0)
+    setShowBonusTasks(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [week])
 
   const handleSaveWeek = () => {
@@ -60,12 +73,20 @@ function HomeScreen() {
 
   const handleAddNextToCalendar = () => {
     if (!next) return
-    downloadIcsEvent({
+    openGoogleCalendarEvent({
       title: next.title,
       date: next.date,
       description: next.desc || next.title,
     })
     addPlannedEvent(String(next.week))
+  }
+
+  const handleWhatToKnow = () => {
+    if (next?.preparation) {
+      setPrepOpen(true)
+    } else {
+      navigate('/journey')
+    }
   }
 
   return (
@@ -181,6 +202,18 @@ function HomeScreen() {
         </div>
       </BottomSheet>
 
+      {next?.preparation && (
+        <BottomSheet open={prepOpen} onClose={() => setPrepOpen(false)}>
+          <PreparationDetail
+            title={next.title}
+            badge={next.badge}
+            preparation={next.preparation}
+            onAddToCalendar={handleAddNextToCalendar}
+            onClose={() => setPrepOpen(false)}
+          />
+        </BottomSheet>
+      )}
+
       {(next || upNext.length > 0) && (
         <section
           className="mx-5 rounded-2xl p-4"
@@ -226,7 +259,7 @@ function HomeScreen() {
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
-                  onClick={() => navigate('/journey')}
+                  onClick={handleWhatToKnow}
                   style={{
                     minHeight: 44,
                     backgroundColor: 'var(--color-info)',
@@ -234,7 +267,7 @@ function HomeScreen() {
                   }}
                   className="flex-1 rounded-xl text-sm font-semibold"
                 >
-                  {next.type === 'task' ? 'פתח הכנה' : 'ראה מה צריך לדעת'}
+                  {next.type === 'task' ? 'פתח הכנה' : 'מה צריך לדעת'}
                 </button>
                 <button
                   type="button"
@@ -274,37 +307,79 @@ function HomeScreen() {
         style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
       >
         <h2 className="mb-2 text-sm font-semibold">המשימה שלך היום 🎯</h2>
-        {taskDismissed ? (
-          <p className="text-sm text-[var(--text-secondary)]">
-            בסדר, נזכיר לך שוב מחר.
-          </p>
-        ) : (
+
+        {activeTask && !isExhausted && (
           <>
+            <p className="mb-1 font-bold text-accent" style={{ fontSize: 15 }}>
+              {activeTask.title}
+            </p>
             <p style={{ fontSize: 15, lineHeight: 1.6 }}>
-              {content.data.dad_tip[DEFAULT_TONE]}
+              {activeTask.description}
             </p>
             <div className="mt-3 flex gap-2">
               <button
                 type="button"
-                onClick={() => toggleCompletedTask(taskId)}
+                onClick={() => toggleCompletedTask(activeTask.id)}
                 style={{ minHeight: 44 }}
                 className={`flex-1 rounded-xl text-sm font-semibold ${
-                  isTaskDone
+                  completedTasks.includes(activeTask.id)
                     ? 'bg-accent/20 text-accent'
                     : 'bg-accent text-neutral-950'
                 }`}
               >
-                {isTaskDone ? 'בוצע ✓' : 'סיימתי ✅'}
+                {completedTasks.includes(activeTask.id) ? 'בוצע ✓' : 'סיימתי ✅'}
               </button>
               <button
                 type="button"
-                onClick={() => setTaskDismissed(true)}
+                onClick={() => setCurrentTaskIndex(currentTaskIndex + 1)}
                 style={{ minHeight: 44 }}
                 className="flex-1 rounded-xl border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)]"
               >
                 משימה אחרת
               </button>
             </div>
+          </>
+        )}
+
+        {(isExhausted || relevantTasks.length === 0) && (
+          <>
+            <p className="text-sm text-[var(--text-secondary)]">
+              עשית הכל השבוע 💪
+            </p>
+            {!showBonusTasks ? (
+              <button
+                type="button"
+                onClick={() => setShowBonusTasks(true)}
+                style={{ minHeight: 44 }}
+                className="mt-3 w-full rounded-xl border border-[var(--border)] text-sm font-semibold text-accent"
+              >
+                מה עוד אני יכול לעשות?
+              </button>
+            ) : (
+              <div className="mt-3 flex flex-col gap-3">
+                {bonusTasks.map((task) => (
+                  <div key={task.id} className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-accent" style={{ fontSize: 14 }}>
+                        {task.title}
+                      </p>
+                      <p style={{ fontSize: 14, color: '#888' }}>
+                        {task.description}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleCompletedTask(task.id)}
+                      aria-label={`סיימתי: ${task.title}`}
+                      style={{ minHeight: 44, minWidth: 44 }}
+                      className="shrink-0 text-lg"
+                    >
+                      {completedTasks.includes(task.id) ? '✓' : '○'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </section>

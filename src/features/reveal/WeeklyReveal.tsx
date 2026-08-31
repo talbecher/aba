@@ -54,6 +54,15 @@ function WeeklyReveal() {
     setTileWeek(null)
   }, [week])
 
+  // כל שבוע שכבר עבר (לפני השבוע הנוכחי) נחשב "נחשף" — לא רק שבועות שנלחצו בפועל.
+  // השבוע הנוכחי עצמו נשאר תלוי בטקס ה-reveal האמיתי (handleStartReveal).
+  useEffect(() => {
+    for (let w = MIN_WEEK; w < week; w++) {
+      addRevealedWeek(w)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [week])
+
   useEffect(() => {
     if (phase !== 'reveal') return
     const t = setTimeout(() => {

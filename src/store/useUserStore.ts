@@ -14,6 +14,7 @@ interface UserStore extends UserState {
   addRevealedWeek: (week: number) => void
   toggleCompletedTask: (id: string) => void
   addPlannedEvent: (id: string) => void
+  setCurrentTaskIndex: (index: number) => void
 }
 
 const initialState: UserState = {
@@ -28,6 +29,7 @@ const initialState: UserState = {
   revealedWeeks: [],
   completedTasks: [],
   plannedEvents: [],
+  currentTaskIndex: 0,
 }
 
 export const useUserStore = create<UserStore>()(
@@ -67,6 +69,7 @@ export const useUserStore = create<UserStore>()(
             ? state
             : { plannedEvents: [...state.plannedEvents, id] },
         ),
+      setCurrentTaskIndex: (index) => set({ currentTaskIndex: index }),
     }),
     { name: 'aba-user-store' },
   ),

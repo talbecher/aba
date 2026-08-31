@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCurrentWeek } from '../../hooks/useCurrentWeek'
 import { useWeekContent } from '../../hooks/useWeekContent'
-import { useNextEvent } from '../../hooks/useNextEvent'
 import { useUserStore } from '../../store/useUserStore'
 import BottomSheet from '../../components/BottomSheet'
 import type { Tone } from '../../types/user'
@@ -15,24 +14,17 @@ function NowScreen() {
   const week = useCurrentWeek()
   const dueDate = useUserStore((state) => state.due_date)
   const setDueDate = useUserStore((state) => state.setDueDate)
-  const completedTasks = useUserStore((state) => state.completedTasks)
-  const toggleCompletedTask = useUserStore((state) => state.toggleCompletedTask)
   const { csv, data } = useWeekContent(week)
-  const nextEvent = useNextEvent()
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [dueDateInput, setDueDateInput] = useState(dueDate ?? '')
   const [detailsOpen, setDetailsOpen] = useState(false)
-  const [taskDismissed, setTaskDismissed] = useState(false)
 
   const remainingWeeks = TOTAL_WEEKS - week
   const percent = Math.round((week / TOTAL_WEEKS) * 100)
-  const taskId = `daily-task-week-${week}`
-  const isTaskDone = completedTasks.includes(taskId)
 
   useEffect(() => {
     setDetailsOpen(false)
-    setTaskDismissed(false)
   }, [week])
 
   const handleSaveDueDate = () => {
@@ -92,32 +84,7 @@ function NowScreen() {
         </div>
       </BottomSheet>
 
-      {/* 1. באופק */}
-      {nextEvent && (
-        <section
-          className="rounded-2xl p-4"
-          style={{ border: '1px solid #3B82F644', backgroundColor: '#0d1117' }}
-        >
-          <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--color-info)' }}>
-            📍 באופק
-          </h2>
-          <p style={{ fontSize: 12, color: '#888' }}>
-            {nextEvent.daysUntil === 0
-              ? 'היום'
-              : nextEvent.daysUntil === 1
-                ? 'מחר'
-                : `בעוד ${nextEvent.daysUntil} ימים`}
-          </p>
-          <p className="mt-1 text-base font-bold">{nextEvent.title}</p>
-          {nextEvent.desc && (
-            <p className="mt-1 text-sm" style={{ color: '#888' }}>
-              {nextEvent.desc}
-            </p>
-          )}
-        </section>
-      )}
-
-      {/* 2. מה קורה השבוע */}
+      {/* 1. מה קורה השבוע */}
       <section
         className="rounded-2xl p-4"
         style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
@@ -159,57 +126,21 @@ function NowScreen() {
         </button>
       </section>
 
-      {/* 3. המשימה שלך */}
+      {/* 2. עובדה קצרה + קישור לידע */}
       <section
         className="rounded-2xl p-4"
         style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
       >
-        <h2 className="mb-2 text-sm font-semibold">המשימה שלך 🎯</h2>
-        {taskDismissed ? (
-          <p className="text-sm text-[var(--text-secondary)]">
-            בסדר, נזכיר לך שוב מחר.
-          </p>
-        ) : (
-          <>
-            <p style={{ fontSize: 15, lineHeight: 1.6 }}>
-              {data.dad_tip[DEFAULT_TONE]}
-            </p>
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={() => toggleCompletedTask(taskId)}
-                style={{ minHeight: 44 }}
-                className={`flex-1 rounded-xl text-sm font-semibold ${
-                  isTaskDone ? 'bg-accent/20 text-accent' : 'bg-accent text-neutral-950'
-                }`}
-              >
-                {isTaskDone ? 'בוצע ✓' : 'סיימתי'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setTaskDismissed(true)}
-                style={{ minHeight: 44 }}
-                className="flex-1 rounded-xl border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)]"
-              >
-                משימה אחרת
-              </button>
-            </div>
-          </>
-        )}
-      </section>
-
-      {/* 4. רוצה עוד? */}
-      <p style={{ fontSize: 13, color: '#666', textAlign: 'center' }}>
-        רוצה עוד?{' '}
+        <p style={{ fontSize: 14, color: '#888' }}>{data.wtf_fact[DEFAULT_TONE]}</p>
         <button
           type="button"
           onClick={() => navigate('/did-you-know')}
-          className="font-semibold"
+          className="mt-2 text-xs font-semibold"
           style={{ color: 'var(--color-knowledge)' }}
         >
           עוד עובדות →
         </button>
-      </p>
+      </section>
     </div>
   )
 }

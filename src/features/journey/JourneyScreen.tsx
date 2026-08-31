@@ -2,13 +2,14 @@ import { useMemo, useState } from 'react'
 import { useCurrentWeek } from '../../hooks/useCurrentWeek'
 import { useUserStore } from '../../store/useUserStore'
 import { getEstimatedDueDate } from '../../lib/week'
-import { downloadIcsEvent, DISCLAIMER } from '../../lib/ics'
+import { openGoogleCalendarEvent, DISCLAIMER } from '../../lib/calendar'
 import {
   journeyEvents,
   eventDate,
   type JourneyEvent,
 } from '../../content/journeyEvents'
 import BottomSheet from '../../components/BottomSheet'
+import PreparationDetail from '../../components/PreparationDetail'
 
 type Filter = 'all' | 'check' | 'task' | 'milestone'
 
@@ -90,7 +91,7 @@ function JourneyScreen() {
   }
 
   const handleAddToCalendar = (event: JourneyEvent) => {
-    downloadIcsEvent({
+    openGoogleCalendarEvent({
       title: event.title,
       date: eventDate(estimatedDueDate, event.week),
       description: event.desc || event.title,
@@ -273,76 +274,59 @@ function JourneyScreen() {
       </div>
 
       <BottomSheet open={selected !== null} onClose={() => setSelected(null)}>
-        {selected && (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold">{selected.title}</h2>
-              <span
-                className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                style={{ backgroundColor: 'var(--accent-dim)', color: 'var(--accent)' }}
-              >
-                {selected.badge}
-              </span>
-            </div>
-            <p className="text-sm text-neutral-400">
-              {dueDate
-                ? formatFullDate(eventDate(estimatedDueDate, selected.week))
-                : `שבוע ${selected.week}`}
-            </p>
-
-            {selected.preparation ? (
-              <>
-                <p className="text-sm leading-relaxed text-neutral-300">
-                  {selected.preparation.what}
-                </p>
-                <p className="text-sm leading-relaxed text-neutral-300">
-                  {selected.preparation.why}
-                </p>
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-semibold text-[var(--text)]">
-                    מה להכין:
-                  </p>
-                  <p className="text-sm leading-relaxed text-neutral-300">
-                    {selected.preparation.prepare}
-                  </p>
-                </div>
-                {selected.preparation.partner && (
-                  <p className="text-sm font-semibold" style={{ color: 'var(--color-success)' }}>
-                    כדאי שתבוא 👍
-                  </p>
-                )}
-              </>
-            ) : (
-              selected.desc && (
+        {selected &&
+          (selected.preparation ? (
+            <PreparationDetail
+              title={selected.title}
+              badge={selected.badge}
+              preparation={selected.preparation}
+              onAddToCalendar={() => handleAddToCalendar(selected)}
+              onClose={() => setSelected(null)}
+            />
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold">{selected.title}</h2>
+                <span
+                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                  style={{ backgroundColor: 'var(--accent-dim)', color: 'var(--accent)' }}
+                >
+                  {selected.badge}
+                </span>
+              </div>
+              <p className="text-sm text-neutral-400">
+                {dueDate
+                  ? formatFullDate(eventDate(estimatedDueDate, selected.week))
+                  : `שבוע ${selected.week}`}
+              </p>
+              {selected.desc && (
                 <p className="text-sm leading-relaxed text-neutral-300">
                   {selected.desc}
                 </p>
-              )
-            )}
-
-            <p className="text-xs leading-relaxed text-neutral-500">
-              {DISCLAIMER}
-            </p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => handleAddToCalendar(selected)}
-                style={{ minHeight: 44 }}
-                className="flex-1 rounded-xl bg-accent p-3 font-semibold text-neutral-950"
-              >
-                הוסף ליומן
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelected(null)}
-                style={{ minHeight: 44 }}
-                className="flex-1 rounded-xl border border-neutral-700 p-3 font-semibold text-neutral-300"
-              >
-                סגור
-              </button>
+              )}
+              <p className="text-xs leading-relaxed text-neutral-500">
+                {DISCLAIMER}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleAddToCalendar(selected)}
+                  style={{ minHeight: 44 }}
+                  className="flex-1 rounded-xl bg-accent p-3 font-semibold text-neutral-950"
+                >
+                  הוסף ליומן
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  style={{ minHeight: 44 }}
+                  className="flex-1 rounded-xl border border-neutral-700 p-3 font-semibold text-neutral-300"
+                >
+                  סגור
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          ))}
       </BottomSheet>
     </div>
   )

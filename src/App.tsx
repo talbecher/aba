@@ -8,13 +8,14 @@ import TimelineScreen from './features/timeline/TimelineScreen'
 import JourneyScreen from './features/journey/JourneyScreen'
 import SosScreen from './features/sos/SosScreen'
 import BottomNav from './components/BottomNav'
+import WeekGate from './components/WeekGate'
 
 function AppLayout() {
   return (
-    <>
+    <WeekGate>
       <Outlet />
       <BottomNav />
-    </>
+    </WeekGate>
   )
 }
 

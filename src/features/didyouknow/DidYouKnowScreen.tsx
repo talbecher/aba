@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { wtfFacts, type WtfCategory } from '../../content/wtf-facts'
 
 const WHEEL_SIZE = 280
-const WHEEL_SIZE_SMALL = 80
 const MIN_EXTRA_SPINS = 4
 const MAX_EXTRA_SPINS = 6
 const MIN_DURATION_S = 3
@@ -56,10 +55,8 @@ function DidYouKnowScreen() {
   const [spinning, setSpinning] = useState(false)
   const [result, setResult] = useState<number | null>(null)
   const [viewedIds, setViewedIds] = useState<Set<string>>(new Set())
-  const [hasRevealedOnce, setHasRevealedOnce] = useState(false)
 
   const total = wtfFacts.length
-  const revealed = hasRevealedOnce
 
   useEffect(() => {
     if (canvasRef.current) drawWheel(canvasRef.current, total)
@@ -95,7 +92,6 @@ function DidYouKnowScreen() {
     setResult(winner)
     if (winner !== null) {
       setViewedIds((prev) => new Set(prev).add(wtfFacts[winner].id))
-      setHasRevealedOnce(true)
     }
   }
 
@@ -121,67 +117,59 @@ function DidYouKnowScreen() {
   }
 
   const resultFact = result !== null ? wtfFacts[result] : null
-  const wheelSize = revealed ? WHEEL_SIZE_SMALL : WHEEL_SIZE
 
   return (
     <div
-      className="mx-auto flex min-h-dvh w-full max-w-[390px] flex-col gap-5 px-5 pb-24 pt-5 text-[var(--text)]"
+      className="mx-auto flex min-h-dvh w-full max-w-[390px] flex-col items-center gap-5 px-5 pb-24 pt-5 text-[var(--text)]"
       style={{ backgroundColor: 'var(--bg)' }}
     >
-      <div
-        className={revealed ? 'self-end' : 'self-center'}
-        style={{ transition: 'width 400ms ease, height 400ms ease' }}
-      >
-        <div className="relative" style={{ width: wheelSize, height: wheelSize, transition: 'width 400ms ease, height 400ms ease' }}>
-          <div
-            className="absolute left-1/2 z-10 -translate-x-1/2"
-            style={{
-              top: revealed ? -6 : -10,
-              width: 0,
-              height: 0,
-              borderLeft: `${revealed ? 5 : 10}px solid transparent`,
-              borderRight: `${revealed ? 5 : 10}px solid transparent`,
-              borderTop: `${revealed ? 8 : 16}px solid var(--accent)`,
-              transition: 'all 400ms ease',
-            }}
-          />
-          <canvas
-            ref={canvasRef}
-            width={WHEEL_SIZE}
-            height={WHEEL_SIZE}
-            onTransitionEnd={handleTransitionEnd}
-            className="rounded-full"
-            style={{
-              width: wheelSize,
-              height: wheelSize,
-              border: '2px solid var(--accent)',
-              boxShadow: '0 0 30px rgba(245,158,11,0.15)',
-              transform: `rotate(${rotation}deg)`,
-              transition: `transform ${duration}s cubic-bezier(0.25, 0.1, 0.25, 1), width 400ms ease, height 400ms ease`,
-            }}
-          />
-        </div>
-      </div>
+      {!resultFact && (
+        <>
+          <div className="relative" style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}>
+            <div
+              className="absolute left-1/2 top-[-10px] z-10 -translate-x-1/2"
+              style={{
+                width: 0,
+                height: 0,
+                borderLeft: '10px solid transparent',
+                borderRight: '10px solid transparent',
+                borderTop: '16px solid var(--accent)',
+              }}
+            />
+            <canvas
+              ref={canvasRef}
+              width={WHEEL_SIZE}
+              height={WHEEL_SIZE}
+              onTransitionEnd={handleTransitionEnd}
+              className="rounded-full"
+              style={{
+                border: '2px solid var(--accent)',
+                boxShadow: '0 0 30px rgba(245,158,11,0.15)',
+                transform: `rotate(${rotation}deg)`,
+                transition: `transform ${duration}s cubic-bezier(0.25, 0.1, 0.25, 1)`,
+              }}
+            />
+          </div>
 
-      {!revealed && (
-        <div className="flex flex-1 flex-col items-center gap-5">
-          <header className="text-center">
-            <h1 className="text-lg font-bold">ידע? 🎯</h1>
-            <p className="mt-2 text-sm" style={{ color: '#888' }}>
-              עובדה אחת מהשבוע שלך. לא חובה לדעת. כן אפשר להשוויץ.
-            </p>
-          </header>
+          <div className="flex flex-1 flex-col items-center gap-5">
+            <header className="text-center">
+              <h1 className="text-lg font-bold">הידעת? 🎯</h1>
+              <p className="mt-2 text-sm" style={{ color: '#888' }}>
+                עובדה אחת מהשבוע שלך. לא חובה לדעת. כן אפשר להשוויץ.
+              </p>
+            </header>
 
-          <button
-            type="button"
-            onClick={handleSpin}
-            disabled={spinning}
-            style={{ minHeight: 44 }}
-            className="w-full rounded-full bg-accent py-4 text-lg font-black text-black disabled:opacity-50"
-          >
-            {spinning ? 'מסתובב...' : 'סובב'}
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={handleSpin}
+              disabled={spinning}
+              style={{ minHeight: 44 }}
+              className="w-full rounded-full bg-accent py-4 text-lg font-black text-black disabled:opacity-50"
+            >
+              {spinning ? 'מסתובב...' : 'סובב'}
+            </button>
+          </div>
+        </>
       )}
 
       {resultFact && (
@@ -210,11 +198,11 @@ function DidYouKnowScreen() {
             </button>
             <button
               type="button"
-              onClick={handleSpin}
+              onClick={() => setResult(null)}
               style={{ minHeight: 44 }}
               className="flex-1 rounded-xl bg-accent font-semibold text-neutral-950"
             >
-              עוד אחת
+              עוד אחת 🎯
             </button>
           </div>
         </div>

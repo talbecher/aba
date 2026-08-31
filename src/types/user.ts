@@ -14,4 +14,5 @@ export interface UserState {
   revealedWeeks: number[]
   completedTasks: string[]
   plannedEvents: string[]
+  currentTaskIndex: number
 }

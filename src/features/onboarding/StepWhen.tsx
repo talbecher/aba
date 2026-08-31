@@ -8,8 +8,6 @@ interface StepWhenProps {
 
 type Method = 'due_date' | 'current_week' | 'conception'
 
-const SKIP_WEEK = 20
-
 function StepWhen({ onNext }: StepWhenProps) {
   const setDueDate = useUserStore((state) => state.setDueDate)
   const setManualWeekOverride = useUserStore(
@@ -39,7 +37,7 @@ function StepWhen({ onNext }: StepWhenProps) {
   }
 
   const handleSkip = () => {
-    setManualWeekOverride(SKIP_WEEK)
+    // לא מנחשים שבוע — אם המשתמש דילג, המסך הראשי יבקש ממנו לבחור בעצמו.
     onNext()
   }
 
