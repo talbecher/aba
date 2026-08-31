@@ -1,94 +1,39 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCurrentWeek } from '../../hooks/useCurrentWeek'
 import { useWeekContent } from '../../hooks/useWeekContent'
+import { useNextEvent } from '../../hooks/useNextEvent'
 import { useUserStore } from '../../store/useUserStore'
-import { getEstimatedDueDate } from '../../lib/week'
 import BottomSheet from '../../components/BottomSheet'
+import type { Tone } from '../../types/user'
 
-const NEXT_EVENT_WINDOW_DAYS = 21
-const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000
-const MS_PER_DAY = 24 * 60 * 60 * 1000
-const TOTAL_PREGNANCY_WEEKS = 40
-
-interface NowEvent {
-  week: number
-  title: string
-  desc: string
-}
-
-const events: NowEvent[] = [
-  { week: 6, title: 'אולטרסאונד ראשון', desc: 'הפעם הראשונה שרואים את הבוטן. תבוא.' },
-  { week: 11, title: 'בדיקת שקיפות עורפית', desc: 'בדיקת NT. חשובה. תוודא שיש תור.' },
-  { week: 12, title: 'סוף טרימסטר ראשון', desc: 'הסיכון יורד. אפשר לבשר.' },
-  { week: 16, title: 'בדיקת AFP', desc: 'בדיקת דם לאיתור חריגות. שאל את הרופא.' },
-  { week: 20, title: 'סקירת מחצית', desc: 'הבדיקה הכי חשובה. 20+ פרמטרים. תבוא מוכן.' },
-  { week: 24, title: 'בדיקת סוכר הריון', desc: 'GDM screening. שגרתי. תוודא שנקבע.' },
-  { week: 28, title: 'טרימסטר שלישי מתחיל', desc: 'ביקורים כל שבועיים מעכשיו.' },
-  { week: 36, title: 'בדיקת GBS', desc: 'חיידק שנבדק לפני לידה. לא מחלה — בדיקה.' },
-  { week: 37, title: 'Full Term', desc: 'מוכן לגמרי. בכל רגע.' },
-  { week: 40, title: 'תאריך לידה משוער', desc: 'הוא/היא מגיעים. בכל רגע.' },
-]
-
-function eventDate(dueDate: Date, week: number): Date {
-  return new Date(
-    dueDate.getTime() - (TOTAL_PREGNANCY_WEEKS - week) * MS_PER_WEEK,
-  )
-}
-
-interface CardShellProps {
-  emoji: string
-  title: string
-  labelColor: string
-  borderColor: string
-  children: React.ReactNode
-}
-
-function Card({ emoji, title, labelColor, borderColor, children }: CardShellProps) {
-  return (
-    <div
-      className="flex flex-col gap-2 rounded-2xl p-4"
-      style={{ backgroundColor: 'var(--bg-card)', border: `1px solid ${borderColor}` }}
-    >
-      <p className="text-[12px] font-semibold" style={{ color: labelColor }}>
-        {emoji} {title}
-      </p>
-      {children}
-    </div>
-  )
-}
+const TOTAL_WEEKS = 40
+const DEFAULT_TONE: Tone = 'bro'
 
 function NowScreen() {
+  const navigate = useNavigate()
   const week = useCurrentWeek()
-  const tone = useUserStore((state) => state.tone)
   const dueDate = useUserStore((state) => state.due_date)
-  const manualWeekOverride = useUserStore((state) => state.manual_week_override)
   const setDueDate = useUserStore((state) => state.setDueDate)
-  const { data } = useWeekContent(week)
+  const completedTasks = useUserStore((state) => state.completedTasks)
+  const toggleCompletedTask = useUserStore((state) => state.toggleCompletedTask)
+  const { csv, data } = useWeekContent(week)
+  const nextEvent = useNextEvent()
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [dueDateInput, setDueDateInput] = useState(dueDate ?? '')
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [taskDismissed, setTaskDismissed] = useState(false)
 
-  const estimatedDueDate = useMemo(
-    () => getEstimatedDueDate(dueDate, manualWeekOverride),
-    [dueDate, manualWeekOverride],
-  )
+  const remainingWeeks = TOTAL_WEEKS - week
+  const percent = Math.round((week / TOTAL_WEEKS) * 100)
+  const taskId = `daily-task-week-${week}`
+  const isTaskDone = completedTasks.includes(taskId)
 
-  const nextEvent = useMemo(() => {
-    const today = new Date()
-    const upcoming = events
-      .map((event) => ({ event, date: eventDate(estimatedDueDate, event.week) }))
-      .filter(({ date }) => date.getTime() >= today.getTime())
-      .sort((a, b) => a.date.getTime() - b.date.getTime())[0]
-
-    if (!upcoming) return null
-
-    const daysUntil = Math.ceil(
-      (upcoming.date.getTime() - today.getTime()) / MS_PER_DAY,
-    )
-    if (daysUntil > NEXT_EVENT_WINDOW_DAYS) return null
-
-    return { ...upcoming.event, daysUntil }
-  }, [estimatedDueDate])
+  useEffect(() => {
+    setDetailsOpen(false)
+    setTaskDismissed(false)
+  }, [week])
 
   const handleSaveDueDate = () => {
     if (dueDateInput) setDueDate(dueDateInput)
@@ -96,11 +41,21 @@ function NowScreen() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[390px] flex-col gap-3 bg-[var(--bg)] px-5 pb-24 pt-5 text-[var(--text)]">
-      <header>
+    <div className="mx-auto flex min-h-dvh w-full max-w-[390px] flex-col gap-4 bg-[var(--bg)] px-5 pb-24 pt-5 text-[var(--text)]">
+      <header className="flex flex-col gap-2">
         <p className="text-[13px] text-[var(--text-secondary)]">
-          שבוע {week} — מה חשוב עכשיו
+          שבוע {week} מתוך {TOTAL_WEEKS}
         </p>
+        <p style={{ fontSize: 12, color: '#555' }}>נותרו {remainingWeeks} שבועות</p>
+        <div
+          className="h-[3px] w-full overflow-hidden rounded-full"
+          style={{ backgroundColor: 'var(--bg-elevated)' }}
+        >
+          <div
+            className="h-full rounded-full"
+            style={{ width: `${percent}%`, backgroundColor: 'var(--color-action)' }}
+          />
+        </div>
       </header>
 
       {!dueDate && (
@@ -110,7 +65,8 @@ function NowScreen() {
             setDueDateInput(dueDate ?? '')
             setSettingsOpen(true)
           }}
-          className="rounded-xl bg-[var(--bg-card)] px-3 py-2 text-right text-xs text-[var(--text-secondary)]"
+          style={{ minHeight: 44 }}
+          className="rounded-xl bg-[var(--bg-card)] px-3 text-right text-xs text-[var(--text-secondary)]"
         >
           הוסף תאריך לידה להתאמה אישית ⚙️
         </button>
@@ -128,6 +84,7 @@ function NowScreen() {
           <button
             type="button"
             onClick={handleSaveDueDate}
+            style={{ minHeight: 44 }}
             className="w-full rounded-xl bg-accent p-3 font-semibold text-neutral-950"
           >
             שמור
@@ -135,58 +92,124 @@ function NowScreen() {
         </div>
       </BottomSheet>
 
+      {/* 1. באופק */}
       {nextEvent && (
-        <Card
-          emoji="🔜"
-          title="הדבר הבא"
-          labelColor="#3B82F6"
-          borderColor="#3B82F6"
+        <section
+          className="rounded-2xl p-4"
+          style={{ border: '1px solid #3B82F644', backgroundColor: '#0d1117' }}
         >
-          <p className="text-base font-bold">
+          <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--color-info)' }}>
+            📍 באופק
+          </h2>
+          <p style={{ fontSize: 12, color: '#888' }}>
             {nextEvent.daysUntil === 0
               ? 'היום'
-              : `בעוד ${nextEvent.daysUntil} ימים`}
-            {' — '}
-            {nextEvent.title}
+              : nextEvent.daysUntil === 1
+                ? 'מחר'
+                : `בעוד ${nextEvent.daysUntil} ימים`}
           </p>
-          <p className="text-[16px] leading-relaxed" style={{ color: '#dddddd' }}>
-            {nextEvent.desc}
-          </p>
-        </Card>
+          <p className="mt-1 text-base font-bold">{nextEvent.title}</p>
+          {nextEvent.desc && (
+            <p className="mt-1 text-sm" style={{ color: '#888' }}>
+              {nextEvent.desc}
+            </p>
+          )}
+        </section>
       )}
 
-      <Card
-        emoji="👩"
-        title="מה היא עוברת עכשיו"
-        labelColor="#EC4899"
-        borderColor="#EC489933"
+      {/* 2. מה קורה השבוע */}
+      <section
+        className="rounded-2xl p-4"
+        style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
       >
-        <p className="text-[16px] leading-relaxed" style={{ color: '#dddddd' }}>
-          {data.she_feels[tone]}
+        <h2 className="mb-2 text-sm font-semibold">מה קורה השבוע</h2>
+        <p className="font-bold" style={{ fontSize: 16 }}>
+          {csv.baby_content.title}
         </p>
-      </Card>
+        <p className="mt-1" style={{ fontSize: 14, color: '#888' }}>
+          {csv.baby_content.plain}
+        </p>
+        <p className="mt-1 italic" style={{ fontSize: 14, color: '#666' }}>
+          {csv.baby_content.aba_line}
+        </p>
 
-      <Card
-        emoji="👨"
-        title="הדבר שלך להיום"
-        labelColor="#F59E0B"
-        borderColor="#F59E0B33"
-      >
-        <p className="text-[16px] leading-relaxed" style={{ color: '#dddddd' }}>
-          {data.dad_tip[tone]}
-        </p>
-      </Card>
+        {detailsOpen && (
+          <div className="mt-3 flex flex-col gap-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+            <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6 }}>
+              {csv.baby_summary}
+            </p>
+            {csv.baby_milestones.length > 0 && (
+              <ul className="flex flex-col gap-1" style={{ color: '#888' }}>
+                {csv.baby_milestones.map((milestone) => (
+                  <li key={milestone} className="text-sm">
+                    • {milestone}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
-      <Card
-        emoji="🤯"
-        title="ידעת השבוע?"
-        labelColor="#8B5CF6"
-        borderColor="#8B5CF633"
+        <button
+          type="button"
+          onClick={() => setDetailsOpen((v) => !v)}
+          className="mt-2 text-xs font-semibold text-accent"
+        >
+          {detailsOpen ? 'הצג פחות ↑' : 'עוד פרטים ↓'}
+        </button>
+      </section>
+
+      {/* 3. המשימה שלך */}
+      <section
+        className="rounded-2xl p-4"
+        style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
       >
-        <p className="text-[16px] leading-relaxed" style={{ color: '#dddddd' }}>
-          {data.wtf_fact[tone]}
-        </p>
-      </Card>
+        <h2 className="mb-2 text-sm font-semibold">המשימה שלך 🎯</h2>
+        {taskDismissed ? (
+          <p className="text-sm text-[var(--text-secondary)]">
+            בסדר, נזכיר לך שוב מחר.
+          </p>
+        ) : (
+          <>
+            <p style={{ fontSize: 15, lineHeight: 1.6 }}>
+              {data.dad_tip[DEFAULT_TONE]}
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => toggleCompletedTask(taskId)}
+                style={{ minHeight: 44 }}
+                className={`flex-1 rounded-xl text-sm font-semibold ${
+                  isTaskDone ? 'bg-accent/20 text-accent' : 'bg-accent text-neutral-950'
+                }`}
+              >
+                {isTaskDone ? 'בוצע ✓' : 'סיימתי'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTaskDismissed(true)}
+                style={{ minHeight: 44 }}
+                className="flex-1 rounded-xl border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)]"
+              >
+                משימה אחרת
+              </button>
+            </div>
+          </>
+        )}
+      </section>
+
+      {/* 4. רוצה עוד? */}
+      <p style={{ fontSize: 13, color: '#666', textAlign: 'center' }}>
+        רוצה עוד?{' '}
+        <button
+          type="button"
+          onClick={() => navigate('/did-you-know')}
+          className="font-semibold"
+          style={{ color: 'var(--color-knowledge)' }}
+        >
+          עוד עובדות →
+        </button>
+      </p>
     </div>
   )
 }

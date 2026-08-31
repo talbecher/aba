@@ -1,10 +1,10 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 
 const TABS = [
-  { path: '/home', emoji: '🏠', label: 'הבית' },
+  { path: '/home', emoji: '🏠', label: 'בית' },
   { path: '/now', emoji: '⚡', label: 'עכשיו' },
-  { path: '/for-dad', emoji: '👨', label: 'בשבילך' },
-  { path: '/did-you-know', emoji: '🎯', label: 'ידעת?' },
+  { path: '/did-you-know', emoji: '🎯', label: 'ידע?' },
+  { path: '/journey', emoji: '🗂️', label: 'מסע' },
 ] as const
 
 function BottomNav() {
@@ -29,7 +29,10 @@ function BottomNav() {
               key={tab.path}
               type="button"
               onClick={() => navigate(tab.path)}
-              className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1 ${
+              aria-label={tab.label}
+              aria-current={active ? 'page' : undefined}
+              style={{ minHeight: 44 }}
+              className={`flex flex-1 flex-col items-center justify-center gap-0.5 rounded-xl ${
                 active
                   ? 'font-bold text-accent'
                   : 'text-[var(--text-muted)]'

@@ -14,10 +14,38 @@ interface BellyRevealProps {
   onShare: () => void
 }
 
-function embryoScale(week: number, totalWeeks: number): number {
-  return 0.3 + Math.min(1, Math.max(0, week / totalWeeks)) * 0.7
+// עוגנים יחסיים: שבוע 4 = 15%, שבוע 20 = 50%, שבוע 40 = 100%.
+// אינטרפולציה ליניארית בין העוגנים; לפני שבוע 4 מרחיבים את השיפוע הראשון אחורה.
+const SCALE_ANCHORS: [week: number, scale: number][] = [
+  [4, 0.15],
+  [20, 0.5],
+  [40, 1],
+]
+
+function embryoScale(week: number): number {
+  const w = Math.min(40, Math.max(1, week))
+
+  const [w1, s1] = SCALE_ANCHORS[0]
+  if (w <= w1) {
+    const [w2, s2] = SCALE_ANCHORS[1]
+    const slope = (s2 - s1) / (w2 - w1)
+    return Math.max(0.05, s1 + slope * (w - w1))
+  }
+
+  for (let i = 0; i < SCALE_ANCHORS.length - 1; i++) {
+    const [fromWeek, fromScale] = SCALE_ANCHORS[i]
+    const [toWeek, toScale] = SCALE_ANCHORS[i + 1]
+    if (w >= fromWeek && w <= toWeek) {
+      const t = (w - fromWeek) / (toWeek - fromWeek)
+      return fromScale + t * (toScale - fromScale)
+    }
+  }
+
+  return 1
 }
 
+// שלב 1 (1-8): blob קטן עגול. שלב 2 (9-16): צורה עוברית עם ראש גדול.
+// שלב 3 (17-28): עובר עם גפיים. שלב 4 (29-40): תינוק מכורבל.
 function fetalStage(week: number): 1 | 2 | 3 | 4 {
   if (week <= 8) return 1
   if (week <= 16) return 2
@@ -25,8 +53,8 @@ function fetalStage(week: number): 1 | 2 | 3 | 4 {
   return 4
 }
 
-function EmbryoSvg({ week, totalWeeks }: { week: number; totalWeeks: number }) {
-  const scale = embryoScale(week, totalWeeks)
+function EmbryoSvg({ week }: { week: number }) {
+  const scale = embryoScale(week)
   const stage = fetalStage(week)
 
   return (
@@ -179,30 +207,54 @@ function BellyReveal({
           )}
         </button>
       ) : (
-        <div className="flex w-full gap-3" style={{ animation: 'reveal-in 400ms ease-out forwards' }}>
+        <div
+          className="flex w-full gap-3"
+          style={{ animation: 'reveal-in 400ms ease-out forwards', direction: 'ltr' }}
+        >
           <div
-            className="flex flex-1 flex-col items-center gap-2 rounded-2xl p-4 text-center"
-            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            className="flex flex-col items-center justify-center gap-2 rounded-2xl p-4 text-center"
+            style={{
+              width: '40%',
+              flexShrink: 0,
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+            }}
           >
-            <p className="text-xs text-[var(--text-secondary)]">איך הבוטן נראה</p>
-            <EmbryoSvg week={week} totalWeeks={totalWeeks} />
+            <EmbryoSvg week={week} />
             <p className="text-xs text-[var(--text-muted)]">{sizeValue}</p>
           </div>
 
           <div
-            className="flex flex-1 flex-col items-center justify-center gap-2 rounded-2xl p-4 text-center"
-            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            className="flex flex-col items-center gap-1 rounded-2xl p-4 text-center"
+            style={{
+              width: '60%',
+              direction: 'rtl',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+            }}
           >
-            <p className="text-xs text-[var(--text-secondary)]">גודל השבוע</p>
-            <h2 className="text-[32px] font-black leading-tight text-white">
+            <p className="text-[11px] uppercase text-[var(--text-muted)]">
+              גודל השבוע
+            </p>
+            <h2
+              className="font-black text-white"
+              style={{ fontSize: 28, fontWeight: 900, lineHeight: 1 }}
+            >
               {sizeItem}
             </h2>
-            <span className="text-[22px] font-bold text-accent">
+            <span className="text-[16px] font-bold text-accent">
               {sizeDisplay}
             </span>
-            <p className="text-[16px] italic text-[var(--text-secondary)]">
+            <p className="text-[14px] italic text-[var(--text-secondary)]">
               {sizePunchline}
             </p>
+            <button
+              type="button"
+              onClick={onShare}
+              className="mt-2 rounded-full border border-accent/40 px-3 py-1 text-[11px] font-semibold text-accent"
+            >
+              שתף 🥜
+            </button>
           </div>
         </div>
       )}
@@ -220,22 +272,13 @@ function BellyReveal({
       </div>
 
       {phase === 'revealed' && (
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setPhase('closed')}
-            className="rounded-full border border-accent/40 px-4 py-1.5 text-xs font-semibold text-accent"
-          >
-            פתח שוב 🎀
-          </button>
-          <button
-            type="button"
-            onClick={onShare}
-            className="rounded-full border border-accent/40 px-4 py-1.5 text-xs font-semibold text-accent"
-          >
-            שתף 🥜
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setPhase('closed')}
+          className="rounded-full border border-accent/40 px-4 py-1.5 text-xs font-semibold text-accent"
+        >
+          פתח שוב 🎀
+        </button>
       )}
     </section>
   )

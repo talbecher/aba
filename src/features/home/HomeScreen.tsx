@@ -1,110 +1,53 @@
-import { useRef, useState } from 'react'
-import html2canvas from 'html2canvas-pro'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCurrentWeek } from '../../hooks/useCurrentWeek'
 import { useWeekContent } from '../../hooks/useWeekContent'
+import { useJourneyPreview } from '../../hooks/useJourneyPreview'
 import { useUserStore } from '../../store/useUserStore'
-import { trackEvent } from '../../lib/analytics'
-import ToneSwitcher from '../../components/ToneSwitcher'
+import { downloadIcsEvent } from '../../lib/ics'
 import BottomSheet from '../../components/BottomSheet'
-import ShareCard from '../../components/ShareCard'
-import BellyReveal from './BellyReveal'
-import { sosItems } from '../../content/sos'
+import WeeklyReveal from '../reveal/WeeklyReveal'
 import type { Tone } from '../../types/user'
-import type { WeekData } from '../../types/content'
 
-type Tab = 'baby' | 'she' | 'dad' | 'wow'
-type WeekSectionKey = 'whats_happening' | 'she_feels' | 'dad_tip' | 'wtf_fact'
+const TOTAL_WEEKS = 40
+const DEFAULT_TONE: Tone = 'bro' // טון אחיד: קליל, ישיר, קצת ציני
 
-const TABS: { id: Tab; label: string; field: WeekSectionKey }[] = [
-  { id: 'baby', label: 'בוטן', field: 'whats_happening' },
-  { id: 'she', label: 'היא', field: 'she_feels' },
-  { id: 'dad', label: 'אתה', field: 'dad_tip' },
-  { id: 'wow', label: 'WOW', field: 'wtf_fact' },
-]
-
-const SAFETY_NOTE =
-  'אם מופיע דימום, כאב בטן חד שאינו חולף, או ירידת נוזלים — לא מחכים ולא מנחשים. פונים לצוות המטפל.'
-
-function tabText(data: WeekData, field: WeekSectionKey, tone: Tone): string {
-  return data[field][tone]
+function getTrimester(week: number): 1 | 2 | 3 {
+  if (week <= 13) return 1
+  if (week <= 27) return 2
+  return 3
 }
 
 function HomeScreen() {
+  const navigate = useNavigate()
   const week = useCurrentWeek()
-  const tone = useUserStore((state) => state.tone)
   const dueDate = useUserStore((state) => state.due_date)
   const manualWeekOverride = useUserStore((state) => state.manual_week_override)
   const setDueDate = useUserStore((state) => state.setDueDate)
   const setManualWeekOverride = useUserStore(
     (state) => state.setManualWeekOverride,
   )
+  const completedTasks = useUserStore((state) => state.completedTasks)
+  const toggleCompletedTask = useUserStore((state) => state.toggleCompletedTask)
+  const addPlannedEvent = useUserStore((state) => state.addPlannedEvent)
   const showManualWeekNotice = !dueDate && manualWeekOverride !== null
   const content = useWeekContent(week)
+  const { next, upNext } = useJourneyPreview()
 
-  const [tab, setTab] = useState<Tab>('baby')
-  const [openSosId, setOpenSosId] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [dueDateInput, setDueDateInput] = useState(dueDate ?? '')
   const [weekSlider, setWeekSlider] = useState(manualWeekOverride ?? week)
+  const [taskDismissed, setTaskDismissed] = useState(false)
 
-  const activeTab = TABS.find((t) => t.id === tab)!
-  const activeTabText = tabText(content.data, activeTab.field, tone)
+  const taskId = `daily-task-week-${week}`
+  const isTaskDone = completedTasks.includes(taskId)
+  const trimester = getTrimester(week)
+  const percent = Math.round((week / TOTAL_WEEKS) * 100)
+  const remainingWeeks = TOTAL_WEEKS - week
 
-  const shareCardRef = useRef<HTMLDivElement>(null)
-  const [sharePreview, setSharePreview] = useState<{
-    dataUrl: string
-    blob: Blob
-  } | null>(null)
-
-  const handleOpenSharePreview = async () => {
-    if (!shareCardRef.current) return
-
-    try {
-      const canvas = await html2canvas(shareCardRef.current, {
-        backgroundColor: '#1A1A1A',
-      })
-
-      canvas.toBlob((blob) => {
-        if (!blob) return
-        setSharePreview({ dataUrl: canvas.toDataURL('image/png'), blob })
-      }, 'image/png')
-    } catch (err) {
-      console.error('[handleShare] capture failed', err)
-    }
-  }
-
-  const handleConfirmShare = async () => {
-    if (!sharePreview) return
-    const file = new File([sharePreview.blob], 'aba-share.png', {
-      type: 'image/png',
-    })
-
-    if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: 'Aba' })
-        trackEvent('share_card_shared')
-      } catch {
-        // user cancelled the share sheet
-      }
-      setSharePreview(null)
-      return
-    }
-
-    const url = URL.createObjectURL(sharePreview.blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'aba-share.png'
-    a.click()
-    URL.revokeObjectURL(url)
-    trackEvent('share_card_downloaded')
-    setSharePreview(null)
-  }
-
-  const handleSosToggle = (id: string) => {
-    const opening = openSosId !== id
-    setOpenSosId(opening ? id : null)
-    if (opening) trackEvent('sos_opened', { id })
-  }
+  useEffect(() => {
+    setTaskDismissed(false)
+  }, [week])
 
   const handleSaveWeek = () => {
     if (dueDateInput) {
@@ -115,30 +58,73 @@ function HomeScreen() {
     setSettingsOpen(false)
   }
 
+  const handleAddNextToCalendar = () => {
+    if (!next) return
+    downloadIcsEvent({
+      title: next.title,
+      date: next.date,
+      description: next.desc || next.title,
+    })
+    addPlannedEvent(String(next.week))
+  }
+
   return (
-    <div className="relative mx-auto min-h-dvh w-full max-w-[390px] bg-[var(--bg)] pb-24 text-[var(--text)]">
-      <header className="flex flex-col gap-3 border-b border-[var(--border)] px-5 pb-4 pt-5">
-        <div className="relative flex h-6 items-center justify-center">
-          <button
-            type="button"
-            onClick={() => {
-              setDueDateInput(dueDate ?? '')
-              setWeekSlider(manualWeekOverride ?? week)
-              setSettingsOpen(true)
-            }}
-            aria-label="עדכן שבוע"
-            className="absolute left-0 text-xl text-[var(--text-secondary)]"
+    <div className="mx-auto flex min-h-dvh w-full max-w-[390px] flex-col gap-4 bg-[var(--bg)] pb-24 text-[var(--text)]">
+      <header className="flex flex-col gap-2 px-5 pt-4 pb-2">
+        <div className="grid grid-cols-3 items-center">
+          <div className="flex items-center gap-1 justify-self-start">
+            <button
+              type="button"
+              onClick={() => navigate('/sos')}
+              aria-label="קרה משהו? SOS"
+              style={{ minHeight: 44, minWidth: 44 }}
+              className="flex items-center justify-center text-lg"
+            >
+              <span style={{ color: 'var(--color-danger)' }}>🚨</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDueDateInput(dueDate ?? '')
+                setWeekSlider(manualWeekOverride ?? week)
+                setSettingsOpen(true)
+              }}
+              aria-label="עדכן שבוע"
+              style={{ minHeight: 44, minWidth: 44 }}
+              className="flex items-center justify-center text-lg text-[var(--text-secondary)]"
+            >
+              ⚙️
+            </button>
+          </div>
+          <p
+            className="justify-self-center text-accent"
+            style={{ fontSize: 16, fontWeight: 900 }}
           >
-            ⚙️
-          </button>
-          <p className="text-[18px] font-black text-accent">Aba</p>
-          <p className="absolute right-0 text-xs text-[var(--text-secondary)]">
-            שבוע {week}
+            Aba
           </p>
+          <span aria-hidden="true" />
         </div>
-        <ToneSwitcher />
+
+        <p className="text-center" style={{ fontSize: 12, color: '#555' }}>
+          שבוע {week} מתוך {TOTAL_WEEKS} · טרימסטר {trimester} · נותרו{' '}
+          {remainingWeeks} שבועות
+        </p>
+
+        <div
+          className="h-[3px] w-full overflow-hidden rounded-full"
+          style={{ backgroundColor: 'var(--bg-elevated)' }}
+        >
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${percent}%`,
+              backgroundColor: 'var(--color-action)',
+            }}
+          />
+        </div>
+
         {showManualWeekNotice && (
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-center text-xs text-[var(--text-muted)]">
             תוכן מוצג לשבוע {week} — עדכן שבוע בהגדרות
           </p>
         )}
@@ -187,6 +173,7 @@ function HomeScreen() {
           <button
             type="button"
             onClick={handleSaveWeek}
+            style={{ minHeight: 44 }}
             className="w-full rounded-xl bg-accent p-3 font-semibold text-neutral-950"
           >
             שמור
@@ -194,165 +181,139 @@ function HomeScreen() {
         </div>
       </BottomSheet>
 
-      <BellyReveal
-        week={week}
-        sizeItem={content.overview.size_item}
-        sizeDisplay={content.overview.size_display}
-        sizePunchline={content.overview.size_punchline}
-        sizeValue={content.overview.size_value}
-        onShare={handleOpenSharePreview}
-      />
-
-      <BottomSheet
-        open={sharePreview !== null}
-        onClose={() => setSharePreview(null)}
-      >
-        {sharePreview && (
-          <div className="flex flex-col gap-4">
-            <h2 className="text-center text-lg font-bold">תצוגה מקדימה</h2>
-            <img
-              src={sharePreview.dataUrl}
-              alt="תצוגה מקדימה של הכרטיס לשיתוף"
-              className="w-full rounded-2xl"
-            />
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setSharePreview(null)}
-                className="flex-1 rounded-xl border border-neutral-700 p-3 font-semibold text-neutral-300"
-              >
-                סגור
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmShare}
-                className="flex-1 rounded-xl bg-accent p-3 font-semibold text-neutral-950"
-              >
-                שתף
-              </button>
-            </div>
-          </div>
-        )}
-      </BottomSheet>
-
-      <div
-        aria-hidden="true"
-        style={{ position: 'fixed', top: -9999, left: -9999, pointerEvents: 'none' }}
-      >
-        <ShareCard
-          ref={shareCardRef}
-          week={week}
-          emoji={content.overview.emoji}
-          sizeItem={content.overview.size_item}
-          sizePunchline={content.overview.size_punchline}
-          sizeDisplay={content.overview.size_display}
-        />
-      </div>
-
-      <nav className="mx-5 mt-6 flex gap-2">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={`rounded-[20px] border px-4 py-2 text-sm font-semibold transition-colors ${
-              tab === t.id
-                ? 'border-accent text-accent'
-                : 'border-[var(--border)] text-[var(--text-muted)]'
-            }`}
-            style={tab === t.id ? { backgroundColor: 'var(--accent-dim)' } : undefined}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-
-      <section className="mx-5 mt-4 whitespace-pre-line rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4 text-[16px] leading-[1.7] text-[var(--text)]">
-        {activeTabText}
-      </section>
-
-      <section
-        className="mx-5 mt-6 rounded-2xl border-r-[3px] border-accent px-4 py-[14px]"
-        style={{ backgroundColor: 'var(--accent-dim)' }}
-      >
-        <h2 className="mb-2 text-sm font-semibold text-accent">
-          🔮 מה בהמשך
-        </h2>
-        <p className="text-[16px] italic leading-relaxed text-[var(--text)]">
-          {content.data.coming_next}
-        </p>
-      </section>
-
-      <section
-        className="mx-5 mt-6 flex items-center gap-2 rounded-xl px-4 py-3"
-        style={{
-          backgroundColor: 'rgba(245,158,11,0.06)',
-          border: '1px solid rgba(245,158,11,0.25)',
-        }}
-      >
-        <span>⚠️</span>
-        <p className="text-xs leading-relaxed text-[var(--text-secondary)]">
-          {SAFETY_NOTE}
-        </p>
-      </section>
-
-      <section className="mx-5 mt-6">
-        <h2 className="section-heading">🔍 קרה משהו?</h2>
-        <div className="grid grid-cols-3 gap-3">
-          {sosItems.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => handleSosToggle(item.id)}
-              className={`flex flex-col items-center gap-1 rounded-xl border px-2 py-3 text-center transition-colors hover:border-accent ${
-                openSosId === item.id
-                  ? 'border-accent bg-accent/10'
-                  : 'border-[var(--border)] bg-[var(--bg-elevated)]'
-              }`}
-            >
-              <span className="text-2xl">{item.emoji}</span>
-              <span className="text-[11px] text-[var(--text-secondary)]">
-                {item.label}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {sosItems.map((item) => {
-          if (openSosId !== item.id) return null
-          const answer =
-            item.class === 'medical' ? item.answer : item.answer_variants?.[tone]
-          return (
-            <div
-              key={`${item.id}-answer`}
-              className={`mt-3 rounded-2xl p-4 text-sm leading-relaxed ${
-                item.class === 'medical'
-                  ? 'text-[var(--text-secondary)]'
-                  : 'bg-[var(--bg-card)] text-[var(--text)]'
-              }`}
-              style={
-                item.class === 'medical'
-                  ? { border: '1px solid rgba(245,158,11,0.25)' }
-                  : undefined
-              }
-            >
-              <p>{answer}</p>
-              {item.class === 'medical' && (
-                <p className="mt-2 font-semibold text-accent">
-                  פנה לצוות המטפל
+      {(next || upNext.length > 0) && (
+        <section
+          className="mx-5 rounded-2xl p-4"
+          style={{ border: '1px solid #3B82F644', backgroundColor: '#0d1117' }}
+        >
+          {next && (
+            <>
+              <div className="mb-2 flex items-center justify-between">
+                <h2
+                  className="text-sm font-semibold"
+                  style={{ color: 'var(--color-info)' }}
+                >
+                  📍 באופק
+                </h2>
+                <span
+                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                  style={{
+                    backgroundColor: 'rgba(59,130,246,0.12)',
+                    color: 'var(--color-info)',
+                  }}
+                >
+                  {next.badge}
+                </span>
+              </div>
+              <p style={{ fontSize: 12, color: '#888' }}>
+                {next.daysUntil === 0
+                  ? 'היום'
+                  : next.daysUntil === 1
+                    ? 'מחר'
+                    : `בעוד ${next.daysUntil} ימים`}
+              </p>
+              <p className="mt-1" style={{ fontSize: 18, fontWeight: 700 }}>
+                {next.title}
+              </p>
+              {next.desc && (
+                <p
+                  className="mt-1 truncate"
+                  style={{ fontSize: 14, color: '#888' }}
+                >
+                  {next.desc}
                 </p>
               )}
-              {item.actions && (
-                <ul className="mt-3 flex flex-col gap-1 text-[var(--text-secondary)]">
-                  {item.actions.map((step) => (
-                    <li key={step}>• {step}</li>
-                  ))}
-                </ul>
-              )}
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate('/journey')}
+                  style={{
+                    minHeight: 44,
+                    backgroundColor: 'var(--color-info)',
+                    color: '#0A0A0A',
+                  }}
+                  className="flex-1 rounded-xl text-sm font-semibold"
+                >
+                  {next.type === 'task' ? 'פתח הכנה' : 'ראה מה צריך לדעת'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddNextToCalendar}
+                  style={{ minHeight: 44, borderColor: '#333', color: '#888' }}
+                  className="flex-1 rounded-xl border text-sm font-semibold"
+                >
+                  הוסף ליומן
+                </button>
+              </div>
+            </>
+          )}
+
+          {upNext.length > 0 && (
+            <div className={`flex flex-col gap-1 ${next ? 'mt-4' : ''}`}>
+              {upNext.map((event) => (
+                <p key={event.week} style={{ fontSize: 12, color: '#666' }}>
+                  שבוע {event.week} · {event.title}
+                </p>
+              ))}
             </div>
-          )
-        })}
+          )}
+
+          <button
+            type="button"
+            onClick={() => navigate('/journey')}
+            className="mt-3 text-xs font-semibold"
+            style={{ color: 'var(--color-info)' }}
+          >
+            פתח את כל המסע →
+          </button>
+        </section>
+      )}
+
+      <section
+        className="mx-5 rounded-2xl p-4"
+        style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
+      >
+        <h2 className="mb-2 text-sm font-semibold">המשימה שלך היום 🎯</h2>
+        {taskDismissed ? (
+          <p className="text-sm text-[var(--text-secondary)]">
+            בסדר, נזכיר לך שוב מחר.
+          </p>
+        ) : (
+          <>
+            <p style={{ fontSize: 15, lineHeight: 1.6 }}>
+              {content.data.dad_tip[DEFAULT_TONE]}
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => toggleCompletedTask(taskId)}
+                style={{ minHeight: 44 }}
+                className={`flex-1 rounded-xl text-sm font-semibold ${
+                  isTaskDone
+                    ? 'bg-accent/20 text-accent'
+                    : 'bg-accent text-neutral-950'
+                }`}
+              >
+                {isTaskDone ? 'בוצע ✓' : 'סיימתי ✅'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTaskDismissed(true)}
+                style={{ minHeight: 44 }}
+                className="flex-1 rounded-xl border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)]"
+              >
+                משימה אחרת
+              </button>
+            </div>
+          </>
+        )}
       </section>
+
+      <WeeklyReveal />
+
+      <p style={{ fontSize: 12, color: '#444', textAlign: 'center' }}>
+        השבוע הבא: משהו קטן יותר ממה שאתה חושב. נפתח בעוד 7 ימים.
+      </p>
     </div>
   )
 }

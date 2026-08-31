@@ -19,6 +19,22 @@
   --text-muted: #444444;
   --border: #1e1e1e;
   --radius: 16px;
+
+  /* מערכת צבעים סמנטית — לא יותר מ-accent חזק אחד בכרטיס */
+  --color-action: #f59e0b; /* כתום: פעולה/reveal/השבוע */
+  --color-info: #3b82f6; /* כחול: בדיקה/מידע */
+  --color-knowledge: #8b5cf6; /* סגול: עובדות/ידע */
+  --color-success: #10b981; /* ירוק: בוצע בלבד */
+  --color-danger: #ef4444; /* אדום: SOS בלבד */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 html,
@@ -106,5 +122,53 @@ body {
   }
   70% {
     transform: scale(1.15);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.15) rotate(-12deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes revealPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }

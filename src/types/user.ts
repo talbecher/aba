@@ -11,4 +11,7 @@ export interface UserState {
   completed_action_ids: string[]
   onboarding_completed: boolean
   notification_preference: boolean
+  revealedWeeks: number[]
+  completedTasks: string[]
+  plannedEvents: string[]
 }
