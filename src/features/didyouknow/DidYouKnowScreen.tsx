@@ -54,13 +54,15 @@ function DidYouKnowScreen() {
   const [duration, setDuration] = useState(MIN_DURATION_S)
   const [spinning, setSpinning] = useState(false)
   const [result, setResult] = useState<number | null>(null)
-  const [viewedIds, setViewedIds] = useState<Set<string>>(new Set())
 
   const total = wtfFacts.length
+  const wheelVisible = result === null
 
+  // הקנבס יוצא מה-DOM לגמרי כשיש תוצאה (ר' render למטה) וחוזר עם "עוד אחת" —
+  // בלי זה, הרישום היה קורה פעם אחת בלבד ואז נעלם ריק (שחור) בכל חזרה.
   useEffect(() => {
-    if (canvasRef.current) drawWheel(canvasRef.current, total)
-  }, [total])
+    if (wheelVisible && canvasRef.current) drawWheel(canvasRef.current, total)
+  }, [wheelVisible, total])
 
   const handleSpin = () => {
     if (spinning) return
@@ -88,11 +90,7 @@ function DidYouKnowScreen() {
   const handleTransitionEnd = () => {
     if (!spinning) return
     setSpinning(false)
-    const winner = pendingWinnerRef.current
-    setResult(winner)
-    if (winner !== null) {
-      setViewedIds((prev) => new Set(prev).add(wtfFacts[winner].id))
-    }
+    setResult(pendingWinnerRef.current)
   }
 
   const handleShare = async () => {
@@ -183,9 +181,7 @@ function DidYouKnowScreen() {
           <p style={{ fontSize: 15, color: '#888', marginTop: 12 }}>
             {resultFact.factual_text}
           </p>
-          <p style={{ fontSize: 12, color: '#555' }}>
-            ראית {viewedIds.size} מתוך {total} עובדות
-          </p>
+          <p style={{ fontSize: 12, color: '#555' }}>{resultFact.source}</p>
 
           <div className="mt-2 flex w-full gap-2">
             <button

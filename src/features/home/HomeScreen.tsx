@@ -10,12 +10,81 @@ import PreparationDetail from '../../components/PreparationDetail'
 import WeeklyReveal from '../reveal/WeeklyReveal'
 
 const TOTAL_WEEKS = 40
-const BONUS_TASK_COUNT = 3
 
 function getTrimester(week: number): 1 | 2 | 3 {
   if (week <= 13) return 1
   if (week <= 27) return 2
   return 3
+}
+
+interface TaskCardProps {
+  title: string
+  description: string
+  done: boolean
+  onToggle: () => void
+}
+
+function TaskCard({ title, description, done, onToggle }: TaskCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={done ? `בטל סימון: ${title}` : `סמן כבוצע: ${title}`}
+      aria-pressed={done}
+      className="flex w-full flex-col rounded-2xl p-4 text-right"
+      style={{
+        minHeight: 140,
+        backgroundColor: done ? 'rgba(16,185,129,0.08)' : 'var(--bg-card)',
+        border: `1px solid ${done ? 'var(--color-success)' : 'var(--border)'}`,
+        transition: 'background-color 250ms ease, border-color 250ms ease',
+      }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p
+          className="font-bold"
+          style={{
+            fontSize: 15,
+            lineHeight: 1.3,
+            color: done ? 'var(--text-secondary)' : 'var(--text)',
+            textDecoration: done ? 'line-through' : 'none',
+          }}
+        >
+          {title}
+        </p>
+        <span
+          className="shrink-0"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 28,
+            height: 28,
+            borderRadius: '50%',
+            border: `2px solid ${done ? 'var(--color-success)' : 'var(--text-muted)'}`,
+            backgroundColor: done ? 'var(--color-success)' : 'transparent',
+            transition: 'background-color 250ms ease, border-color 250ms ease',
+          }}
+        >
+          <span
+            style={{
+              display: 'inline-block',
+              color: '#0A0A0A',
+              fontSize: 15,
+              fontWeight: 900,
+              transform: done ? 'scale(1) rotate(0deg)' : 'scale(0) rotate(-45deg)',
+              transition: 'transform 350ms cubic-bezier(.34,1.56,.64,1)',
+            }}
+          >
+            ✓
+          </span>
+        </span>
+      </div>
+
+      <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6, marginTop: 8 }}>
+        {description}
+      </p>
+    </button>
+  )
 }
 
 function HomeScreen() {
@@ -29,8 +98,6 @@ function HomeScreen() {
   )
   const completedTasks = useUserStore((state) => state.completedTasks)
   const toggleCompletedTask = useUserStore((state) => state.toggleCompletedTask)
-  const currentTaskIndex = useUserStore((state) => state.currentTaskIndex)
-  const setCurrentTaskIndex = useUserStore((state) => state.setCurrentTaskIndex)
   const addPlannedEvent = useUserStore((state) => state.addPlannedEvent)
   const showManualWeekNotice = !dueDate && manualWeekOverride !== null
   const { next, upNext } = useJourneyPreview()
@@ -39,7 +106,7 @@ function HomeScreen() {
   const [dueDateInput, setDueDateInput] = useState(dueDate ?? '')
   const [weekSlider, setWeekSlider] = useState(manualWeekOverride ?? week)
   const [prepOpen, setPrepOpen] = useState(false)
-  const [showBonusTasks, setShowBonusTasks] = useState(false)
+  const [taskIndex, setTaskIndex] = useState(0)
 
   const trimester = getTrimester(week)
   const percent = Math.round((week / TOTAL_WEEKS) * 100)
@@ -49,17 +116,17 @@ function HomeScreen() {
     () => tasks.filter((t) => t.week_start <= week && week <= t.week_end),
     [week],
   )
-  const bonusTasks = useMemo(
-    () => tasks.filter((t) => !(t.week_start <= week && week <= t.week_end)).slice(0, BONUS_TASK_COUNT),
-    [week],
-  )
-  const activeTask = relevantTasks[currentTaskIndex] ?? null
-  const isExhausted = relevantTasks.length > 0 && currentTaskIndex >= relevantTasks.length
+  const allTasksDone =
+    relevantTasks.length > 0 &&
+    relevantTasks.every((t) => completedTasks.includes(t.id))
+  const totalCompletedCount = completedTasks.filter((id) =>
+    tasks.some((t) => t.id === id),
+  ).length
+  const safeTaskIndex = Math.min(taskIndex, Math.max(0, relevantTasks.length - 1))
+  const currentTask = relevantTasks[safeTaskIndex] ?? null
 
   useEffect(() => {
-    setCurrentTaskIndex(0)
-    setShowBonusTasks(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setTaskIndex(0)
   }, [week])
 
   const handleSaveWeek = () => {
@@ -306,81 +373,69 @@ function HomeScreen() {
         className="mx-5 rounded-2xl p-4"
         style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
       >
-        <h2 className="mb-2 text-sm font-semibold">המשימה שלך היום 🎯</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold">המשימות שלך השבוע 🎯</h2>
+          {relevantTasks.length > 0 && (
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }} dir="ltr">
+              {allTasksDone ? relevantTasks.length : safeTaskIndex + 1}/
+              {relevantTasks.length}
+            </span>
+          )}
+        </div>
 
-        {activeTask && !isExhausted && (
+        {currentTask && !allTasksDone && (
           <>
-            <p className="mb-1 font-bold text-accent" style={{ fontSize: 15 }}>
-              {activeTask.title}
-            </p>
-            <p style={{ fontSize: 15, lineHeight: 1.6 }}>
-              {activeTask.description}
-            </p>
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={() => toggleCompletedTask(activeTask.id)}
-                style={{ minHeight: 44 }}
-                className={`flex-1 rounded-xl text-sm font-semibold ${
-                  completedTasks.includes(activeTask.id)
-                    ? 'bg-accent/20 text-accent'
-                    : 'bg-accent text-neutral-950'
-                }`}
-              >
-                {completedTasks.includes(activeTask.id) ? 'בוצע ✓' : 'סיימתי ✅'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrentTaskIndex(currentTaskIndex + 1)}
-                style={{ minHeight: 44 }}
-                className="flex-1 rounded-xl border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)]"
-              >
-                משימה אחרת
-              </button>
-            </div>
-          </>
-        )}
+            <TaskCard
+              title={currentTask.title}
+              description={currentTask.description}
+              done={completedTasks.includes(currentTask.id)}
+              onToggle={() => {
+                const willBeDone = !completedTasks.includes(currentTask.id)
+                toggleCompletedTask(currentTask.id)
+                if (willBeDone) navigator.vibrate?.([30])
+              }}
+            />
 
-        {(isExhausted || relevantTasks.length === 0) && (
-          <>
-            <p className="text-sm text-[var(--text-secondary)]">
-              עשית הכל השבוע 💪
-            </p>
-            {!showBonusTasks ? (
-              <button
-                type="button"
-                onClick={() => setShowBonusTasks(true)}
-                style={{ minHeight: 44 }}
-                className="mt-3 w-full rounded-xl border border-[var(--border)] text-sm font-semibold text-accent"
-              >
-                מה עוד אני יכול לעשות?
-              </button>
-            ) : (
-              <div className="mt-3 flex flex-col gap-3">
-                {bonusTasks.map((task) => (
-                  <div key={task.id} className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-bold text-accent" style={{ fontSize: 14 }}>
-                        {task.title}
-                      </p>
-                      <p style={{ fontSize: 14, color: '#888' }}>
-                        {task.description}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleCompletedTask(task.id)}
-                      aria-label={`סיימתי: ${task.title}`}
-                      style={{ minHeight: 44, minWidth: 44 }}
-                      className="shrink-0 text-lg"
-                    >
-                      {completedTasks.includes(task.id) ? '✓' : '○'}
-                    </button>
-                  </div>
-                ))}
+            {relevantTasks.length > 1 && (
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTaskIndex((i) => Math.max(0, i - 1))}
+                  disabled={safeTaskIndex === 0}
+                  style={{ minHeight: 44 }}
+                  className="flex-1 rounded-xl border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)] disabled:opacity-30"
+                >
+                  → הקודמת
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTaskIndex((i) => Math.min(relevantTasks.length - 1, i + 1))
+                  }
+                  disabled={safeTaskIndex === relevantTasks.length - 1}
+                  style={{ minHeight: 44 }}
+                  className="flex-1 rounded-xl border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)] disabled:opacity-30"
+                >
+                  משימה הבאה ←
+                </button>
               </div>
             )}
           </>
+        )}
+
+        {allTasksDone && (
+          <div className="flex flex-col items-center gap-2 py-2 text-center">
+            <p style={{ fontSize: 16, fontWeight: 700 }}>
+              כל המשימות השבוע מסומנות ✅
+            </p>
+            <p style={{ fontSize: 14, color: '#888', lineHeight: 1.5 }}>
+              בתכלס, המשימות לא באמת נגמרות. יש תמיד עוד דבר קטן שאפשר לעשות.
+            </p>
+            <p className="mt-1" style={{ fontSize: 12, color: '#555' }}>
+              השלמת {totalCompletedCount} מתוך {tasks.length} משימות לאורך כל
+              ההריון.
+            </p>
+          </div>
         )}
       </section>
 

@@ -2,8 +2,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 const TABS = [
   { path: '/home', emoji: '🏠', label: 'בית' },
-  { path: '/now', emoji: '⚡', label: 'עכשיו' },
-  { path: '/did-you-know', emoji: '🎯', label: 'ידע?' },
+  { path: '/now', emoji: '⚡', label: 'מה עכשיו' },
+  { path: '/did-you-know', emoji: '🎯', label: 'הידעת?' },
   { path: '/journey', emoji: '🗂️', label: 'מסע' },
 ] as const
 

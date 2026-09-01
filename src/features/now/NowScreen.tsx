@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCurrentWeek } from '../../hooks/useCurrentWeek'
 import { useWeekContent } from '../../hooks/useWeekContent'
 import { useUserStore } from '../../store/useUserStore'
+import { nowContent } from '../../content/now-content'
 import BottomSheet from '../../components/BottomSheet'
 import type { Tone } from '../../types/user'
 
@@ -15,6 +16,7 @@ function NowScreen() {
   const dueDate = useUserStore((state) => state.due_date)
   const setDueDate = useUserStore((state) => state.setDueDate)
   const { csv, data } = useWeekContent(week)
+  const rich = nowContent[week] ?? null
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [dueDateInput, setDueDateInput] = useState(dueDate ?? '')
@@ -84,63 +86,136 @@ function NowScreen() {
         </div>
       </BottomSheet>
 
-      {/* 1. מה קורה השבוע */}
-      <section
-        className="rounded-2xl p-4"
-        style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
-      >
-        <h2 className="mb-2 text-sm font-semibold">מה קורה השבוע</h2>
-        <p className="font-bold" style={{ fontSize: 16 }}>
-          {csv.baby_content.title}
-        </p>
-        <p className="mt-1" style={{ fontSize: 14, color: '#888' }}>
-          {csv.baby_content.plain}
-        </p>
-        <p className="mt-1 italic" style={{ fontSize: 14, color: '#666' }}>
-          {csv.baby_content.aba_line}
-        </p>
+      {rich ? (
+        <>
+          <p className="text-xl font-black">{rich.headline}</p>
 
-        {detailsOpen && (
-          <div className="mt-3 flex flex-col gap-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
-            <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6 }}>
-              {csv.baby_summary}
-            </p>
-            {csv.baby_milestones.length > 0 && (
-              <ul className="flex flex-col gap-1" style={{ color: '#888' }}>
-                {csv.baby_milestones.map((milestone) => (
-                  <li key={milestone} className="text-sm">
-                    • {milestone}
-                  </li>
-                ))}
-              </ul>
+          {/* baby */}
+          <section
+            className="rounded-2xl p-4"
+            style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
+          >
+            <h2 className="mb-1 text-sm font-semibold">{rich.baby.title}</h2>
+            {detailsOpen && (
+              <>
+                <p className="mt-1" style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>
+                  {rich.baby.detail}
+                </p>
+                <p className="mt-1 italic" style={{ fontSize: 14, color: '#666' }}>
+                  {rich.baby.aba_line}
+                </p>
+              </>
             )}
-          </div>
-        )}
+            <button
+              type="button"
+              onClick={() => setDetailsOpen((v) => !v)}
+              className="mt-2 text-xs font-semibold text-accent"
+            >
+              {detailsOpen ? 'הצג פחות ↑' : 'עוד פרטים ↓'}
+            </button>
+          </section>
 
-        <button
-          type="button"
-          onClick={() => setDetailsOpen((v) => !v)}
-          className="mt-2 text-xs font-semibold text-accent"
-        >
-          {detailsOpen ? 'הצג פחות ↑' : 'עוד פרטים ↓'}
-        </button>
-      </section>
+          {/* she */}
+          <section
+            className="rounded-2xl p-4"
+            style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
+          >
+            <h2 className="mb-2 text-sm font-semibold">מה היא עוברת</h2>
+            <div className="flex flex-col gap-3">
+              {rich.she.symptoms.map((symptom) => (
+                <div key={symptom.text}>
+                  <p className="text-sm" style={{ color: 'var(--text)' }}>
+                    • {symptom.text}
+                  </p>
+                  <p className="mt-0.5 text-sm italic" style={{ color: '#888' }}>
+                    💡 {symptom.action}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
 
-      {/* 2. עובדה קצרה + קישור לידע */}
-      <section
-        className="rounded-2xl p-4"
-        style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
-      >
-        <p style={{ fontSize: 14, color: '#888' }}>{data.wtf_fact[DEFAULT_TONE]}</p>
-        <button
-          type="button"
-          onClick={() => navigate('/did-you-know')}
-          className="mt-2 text-xs font-semibold"
-          style={{ color: 'var(--color-knowledge)' }}
-        >
-          עוד עובדות →
-        </button>
-      </section>
+          {/* dad */}
+          <section
+            className="rounded-2xl p-4"
+            style={{ border: '1px solid var(--accent)', backgroundColor: 'var(--bg-card)' }}
+          >
+            <h2 className="mb-2 text-sm font-semibold text-accent">{rich.dad.focus}</h2>
+            <p style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.6 }}>
+              {rich.dad.action}
+            </p>
+          </section>
+
+          {/* fact */}
+          <section
+            className="rounded-2xl p-4"
+            style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
+          >
+            <p style={{ fontSize: 14, color: 'var(--color-knowledge)' }}>{rich.fact.text}</p>
+            <p className="mt-1 text-xs" style={{ color: '#555' }}>{rich.fact.source}</p>
+          </section>
+        </>
+      ) : (
+        <>
+          {/* 1. מה קורה השבוע */}
+          <section
+            className="rounded-2xl p-4"
+            style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
+          >
+            <h2 className="mb-2 text-sm font-semibold">מה קורה השבוע</h2>
+            <p className="font-bold" style={{ fontSize: 16 }}>
+              {csv.baby_content.title}
+            </p>
+            <p className="mt-1" style={{ fontSize: 14, color: '#888' }}>
+              {csv.baby_content.plain}
+            </p>
+            <p className="mt-1 italic" style={{ fontSize: 14, color: '#666' }}>
+              {csv.baby_content.aba_line}
+            </p>
+
+            {detailsOpen && (
+              <div className="mt-3 flex flex-col gap-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6 }}>
+                  {csv.baby_summary}
+                </p>
+                {csv.baby_milestones.length > 0 && (
+                  <ul className="flex flex-col gap-1" style={{ color: '#888' }}>
+                    {csv.baby_milestones.map((milestone) => (
+                      <li key={milestone} className="text-sm">
+                        • {milestone}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setDetailsOpen((v) => !v)}
+              className="mt-2 text-xs font-semibold text-accent"
+            >
+              {detailsOpen ? 'הצג פחות ↑' : 'עוד פרטים ↓'}
+            </button>
+          </section>
+
+          {/* 2. עובדה קצרה + קישור לידע */}
+          <section
+            className="rounded-2xl p-4"
+            style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
+          >
+            <p style={{ fontSize: 14, color: '#888' }}>{data.wtf_fact[DEFAULT_TONE]}</p>
+            <button
+              type="button"
+              onClick={() => navigate('/did-you-know')}
+              className="mt-2 text-xs font-semibold"
+              style={{ color: 'var(--color-knowledge)' }}
+            >
+              עוד עובדות →
+            </button>
+          </section>
+        </>
+      )}
     </div>
   )
 }
