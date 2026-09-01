@@ -190,7 +190,14 @@ function HomeScreen() {
           >
             Aba
           </p>
-          <span aria-hidden="true" />
+          <button
+            type="button"
+            onClick={() => navigate('/dictionary')}
+            style={{ minHeight: 44 }}
+            className="justify-self-end text-xs font-semibold text-[var(--text-secondary)]"
+          >
+            🔍 מילון
+          </button>
         </div>
 
         <p className="text-center" style={{ fontSize: 12, color: '#555' }}>

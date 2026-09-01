@@ -7,6 +7,7 @@ import DidYouKnowScreen from './features/didyouknow/DidYouKnowScreen'
 import TimelineScreen from './features/timeline/TimelineScreen'
 import JourneyScreen from './features/journey/JourneyScreen'
 import SosScreen from './features/sos/SosScreen'
+import DictionaryScreen from './features/dictionary/DictionaryScreen'
 import BottomNav from './components/BottomNav'
 import WeekGate from './components/WeekGate'
 
@@ -24,6 +25,7 @@ function App() {
     <Routes>
       <Route path="/" element={<OnboardingFlow />} />
       <Route path="/sos" element={<SosScreen />} />
+      <Route path="/dictionary" element={<DictionaryScreen />} />
       <Route element={<AppLayout />}>
         <Route path="/home" element={<HomeScreen />} />
         <Route path="/now" element={<NowScreen />} />
