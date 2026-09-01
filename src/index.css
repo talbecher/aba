@@ -172,3 +172,15 @@ body {
     transform: scale(1);
   }
 }
+
+@keyframes arFlash {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

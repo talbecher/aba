@@ -3,6 +3,7 @@ import { useCurrentWeek } from '../../hooks/useCurrentWeek'
 import { useUserStore } from '../../store/useUserStore'
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion'
 import { revealData } from '../../content/reveal-data'
+import ARCamera from './ARCamera'
 
 const MIN_WEEK = 3
 const MAX_WEEK = 40
@@ -45,6 +46,7 @@ function WeeklyReveal() {
   const [showButtons, setShowButtons] = useState(false)
   const [collectionView, setCollectionView] = useState<CollectionView>('summary')
   const [tileWeek, setTileWeek] = useState<number | null>(null)
+  const [showAR, setShowAR] = useState(false)
 
   useEffect(() => {
     setPhase('teaser')
@@ -240,6 +242,27 @@ function WeeklyReveal() {
                   הנתונים הם הערכות ממוצעות לשבוע ההיריון.
                 </p>
               </div>
+            )}
+
+            {showStats && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowAR(true)
+                }}
+                style={{
+                  minHeight: 44,
+                  border: '1px solid #F59E0B33',
+                  color: '#F59E0B',
+                  borderRadius: 50,
+                  padding: '10px 20px',
+                  fontSize: 13,
+                }}
+                className="mt-3 font-semibold"
+              >
+                📷 השווה על המצלמה
+              </button>
             )}
 
             {showButtons && (
@@ -525,6 +548,17 @@ function WeeklyReveal() {
             </div>
           </div>
         </div>
+      )}
+
+      {showAR && (
+        <ARCamera
+          week={week}
+          name={data.name}
+          size_cm={data.size_cm}
+          weight={data.weight}
+          punch={data.punch}
+          onClose={() => setShowAR(false)}
+        />
       )}
 
       {phase === 'share' && (
