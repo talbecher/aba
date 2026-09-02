@@ -276,7 +276,10 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
       </div>
 
       {/* סילואט מרכזי — קנה מידה אמיתי, עלול לחרוג מגבולות המסך אצל שבועות מאוחרים */}
-      <div className="relative z-10 flex flex-1 items-center justify-center">
+      <div
+        className="relative z-10 flex flex-1 items-center justify-center"
+        style={{ pointerEvents: 'none' }}
+      >
         <svg width={shape.width} height={shape.height} style={{ overflow: 'visible' }}>
           {/* הילה לבנה לניגודיות מול כל רקע */}
           <rect

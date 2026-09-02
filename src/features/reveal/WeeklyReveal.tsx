@@ -38,7 +38,6 @@ function WeeklyReveal() {
 
   const revealedWeeks = useUserStore((state) => state.revealedWeeks)
   const addRevealedWeek = useUserStore((state) => state.addRevealedWeek)
-  const alreadyRevealedThisWeek = revealedWeeks.includes(week)
   const reducedMotion = usePrefersReducedMotion()
 
   const [phase, setPhase] = useState<Phase>('teaser')
@@ -90,12 +89,6 @@ function WeeklyReveal() {
     if (!showStats) setShowStats(true)
   }
 
-  const handleReopenReveal = () => {
-    setShowStats(true)
-    setShowButtons(true)
-    setPhase('reveal')
-  }
-
   return (
     <div
       className="mx-5 flex flex-col overflow-hidden rounded-2xl"
@@ -104,95 +97,44 @@ function WeeklyReveal() {
         minHeight: 520,
       }}
     >
-      {phase === 'teaser' &&
-        (alreadyRevealedThisWeek ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 py-10 text-center">
-            <p
-              style={{
-                fontSize: 11,
-                color: '#444',
-                textTransform: 'uppercase',
-                letterSpacing: '0.2em',
-              }}
-            >
-              שבוע {week}
-            </p>
-            <p style={{ fontSize: 56, lineHeight: 1 }}>{data.emoji}</p>
-            <p style={{ fontSize: 24, fontWeight: 900, color: '#fff' }}>
-              {data.name}
-            </p>
-            <button
-              type="button"
-              onClick={handleReopenReveal}
-              style={{
-                backgroundColor: '#F59E0B',
-                color: '#0A0A0A',
-                fontWeight: 900,
-                fontSize: 17,
-                padding: '18px 48px',
-                borderRadius: 50,
-                minHeight: 44,
-              }}
-            >
-              תראו לי שוב 👀
-            </button>
-            <p style={{ fontSize: 11, color: '#333', marginTop: 20 }}>
-              ההשוואה הבאה בעוד {NEXT_COMPARISON_DAYS} ימים.
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 py-10 text-center">
-            <p
-              style={{
-                fontSize: 11,
-                color: '#444',
-                textTransform: 'uppercase',
-                letterSpacing: '0.2em',
-              }}
-            >
-              שבוע {week}
-            </p>
-            <p style={{ fontSize: 32, fontWeight: 900, color: '#fff' }}>
-              הבחור גדל.
-            </p>
-            <p style={{ fontSize: 16, color: '#555' }}>
-              נראה למה הוא דומה השבוע.
-            </p>
-            <button
-              type="button"
-              onClick={handleStartReveal}
-              style={{
-                backgroundColor: '#F59E0B',
-                color: '#0A0A0A',
-                fontWeight: 900,
-                fontSize: 17,
-                padding: '18px 48px',
-                borderRadius: 50,
-                minHeight: 44,
-              }}
-            >
-              יאללה, תראה 👀
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowAR(true)}
-              style={{
-                minHeight: 44,
-                border: '1px solid #F59E0B33',
-                color: '#F59E0B',
-                borderRadius: 50,
-                padding: '10px 20px',
-                fontSize: 13,
-              }}
-              className="font-semibold"
-            >
-              📷 השווה על המצלמה
-            </button>
-            <p style={{ fontSize: 11, color: '#333', marginTop: 20 }}>
-              ההשוואה הבאה בעוד {NEXT_COMPARISON_DAYS} ימים.
-            </p>
-          </div>
-        ))}
+      {phase === 'teaser' && (
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 py-10 text-center">
+          <p
+            style={{
+              fontSize: 11,
+              color: '#444',
+              textTransform: 'uppercase',
+              letterSpacing: '0.2em',
+            }}
+          >
+            שבוע {week}
+          </p>
+          <p style={{ fontSize: 32, fontWeight: 900, color: '#fff' }}>
+            הבחור גדל.
+          </p>
+          <p style={{ fontSize: 16, color: '#555' }}>
+            נראה למה הוא דומה השבוע.
+          </p>
+          <button
+            type="button"
+            onClick={handleStartReveal}
+            style={{
+              backgroundColor: '#F59E0B',
+              color: '#0A0A0A',
+              fontWeight: 900,
+              fontSize: 17,
+              padding: '18px 48px',
+              borderRadius: 50,
+              minHeight: 44,
+            }}
+          >
+            יאללה, תראה 👀
+          </button>
+          <p style={{ fontSize: 11, color: '#333', marginTop: 20 }}>
+            ההשוואה הבאה בעוד {NEXT_COMPARISON_DAYS} ימים.
+          </p>
+        </div>
+      )}
 
       {phase === 'reveal' && (
         <div
@@ -590,7 +532,10 @@ function WeeklyReveal() {
           size_cm={data.size_cm}
           weight={data.weight}
           punch={data.punch}
-          onClose={() => setShowAR(false)}
+          onClose={() => {
+            setShowAR(false)
+            setPhase('teaser')
+          }}
         />
       )}
 
@@ -598,7 +543,7 @@ function WeeklyReveal() {
         <div className="flex flex-1 flex-col items-center justify-center gap-5 px-8 py-10">
           <button
             type="button"
-            onClick={() => setPhase(alreadyRevealedThisWeek ? 'teaser' : 'reveal')}
+            onClick={() => setPhase('reveal')}
             className="self-start"
             style={{ fontSize: 12, color: '#555', minHeight: 44 }}
           >
