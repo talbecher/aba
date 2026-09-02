@@ -121,7 +121,7 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
   return (
     <div
       className="fixed inset-0 z-[200] flex flex-col overflow-hidden"
-      style={{ backgroundColor: '#000' }}
+      style={{ backgroundColor: '#000', height: '100dvh' }}
     >
       <div
         id="ar-flash"
