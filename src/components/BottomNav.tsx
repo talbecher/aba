@@ -4,7 +4,7 @@ const TABS = [
   { path: '/home', emoji: '🏠', label: 'בית' },
   { path: '/now', emoji: '⚡', label: 'מה עכשיו' },
   { path: '/did-you-know', emoji: '🎯', label: 'הידעת?' },
-  { path: '/journey', emoji: '🗂️', label: 'מסע' },
+  { path: '/journey', emoji: '🗂️', label: 'יומן מסע' },
 ] as const
 
 function BottomNav() {

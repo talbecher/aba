@@ -39,7 +39,6 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [cameraFailed, setCameraFailed] = useState(false)
-  const [flash, setFlash] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -78,10 +77,24 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
     onClose()
   }
 
-  const handleCapture = () => {
-    setFlash(true)
-    navigator.vibrate?.([50])
-    setTimeout(() => setFlash(false), 200)
+  const snap = () => {
+    const flash = document.getElementById('ar-flash') ?? document.querySelector('.ar-flash')
+    if (flash instanceof HTMLElement) {
+      flash.style.opacity = '1'
+      setTimeout(() => {
+        flash.style.opacity = '0'
+      }, 150)
+    } else {
+      const video = videoRef.current
+      if (video) {
+        video.style.filter = 'brightness(3)'
+        setTimeout(() => {
+          video.style.filter = ''
+        }, 150)
+      }
+    }
+
+    navigator.vibrate?.(50)
   }
 
   const handleShare = async () => {
@@ -110,12 +123,18 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
       className="fixed inset-0 z-[200] flex flex-col overflow-hidden"
       style={{ backgroundColor: '#000' }}
     >
-      {flash && (
-        <div
-          className="pointer-events-none fixed inset-0 z-[210]"
-          style={{ backgroundColor: '#fff', animation: 'arFlash 200ms ease-out' }}
-        />
-      )}
+      <div
+        id="ar-flash"
+        className="ar-flash pointer-events-none"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: '#fff',
+          opacity: 0,
+          transition: 'opacity 0.15s',
+          zIndex: 9999,
+        }}
+      />
 
       {!cameraFailed ? (
         <video
@@ -183,7 +202,6 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
       >
         <div className="flex flex-col items-center gap-1 text-center">
           <p style={{ fontSize: 14, color: '#ddd' }}>כוון ליד חפץ בבית ותצלם</p>
-          <p style={{ fontSize: 12, color: '#888', fontStyle: 'italic' }}>{punch}</p>
         </div>
 
         <div className="flex w-full items-center justify-center gap-4">
@@ -203,7 +221,7 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
           </button>
           <button
             type="button"
-            onClick={handleCapture}
+            onClick={snap}
             aria-label="צלם"
             style={{
               width: 64,

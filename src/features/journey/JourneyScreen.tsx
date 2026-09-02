@@ -103,7 +103,7 @@ function JourneyScreen() {
     <div className="mx-auto flex min-h-dvh w-full max-w-[390px] flex-col gap-5 bg-[var(--bg)] px-5 pb-24 pt-5 text-[var(--text)]">
       <header className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-black">🗂️ המסע שלכם</h1>
+          <h1 className="text-xl font-black">🗂️ יומן המסע שלכם</h1>
           <button
             type="button"
             onClick={() => {
