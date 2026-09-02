@@ -79,6 +79,9 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
   }
 
   const handleSnap = () => {
+    // DIAGNOSTIC — temporary, remove once click registration is confirmed.
+    alert('SNAP CLICKED ' + Date.now())
+
     try {
       console.log('snap fired')
       console.log('flash el:', document.getElementById('ar-flash'))
