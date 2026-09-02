@@ -41,7 +41,8 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
   const streamRef = useRef<MediaStream | null>(null)
   const [cameraFailed, setCameraFailed] = useState(false)
   const [flashing, setFlashing] = useState(false)
-  const [captureStatus, setCaptureStatus] = useState<'idle' | 'working' | 'saved' | 'error'>('idle')
+  const [shareStatus, setShareStatus] = useState<'idle' | 'working' | 'saved' | 'error'>('idle')
+  const [photo, setPhoto] = useState<{ url: string; file: File } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -77,6 +78,7 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
   const handleClose = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop())
     streamRef.current = null
+    if (photo) URL.revokeObjectURL(photo.url)
     onClose()
   }
 
@@ -88,7 +90,6 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
   }
 
   const capturePhoto = async () => {
-    setCaptureStatus('working')
     try {
       const cw = window.innerWidth
       const ch = window.innerHeight
@@ -161,40 +162,54 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
       if (!blob) throw new Error('canvas.toBlob returned null')
 
       const file = new File([blob], `aba-week-${week}.png`, { type: 'image/png' })
-      const shareText = `שבוע ${week}\n${name}\n${punch}\n${sizeDisplay}\n\nAba 🥜`
 
-      if (navigator.canShare?.({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], text: shareText })
-          setCaptureStatus('saved')
-          return
-        } catch {
-          // המשתמש ביטל את חלון השיתוף — לא שגיאה.
-          setCaptureStatus('idle')
-          return
-        }
+      // הצילום נעצר — עוברים לתצוגה מקדימה, בלי לפתוח שיתוף אוטומטית.
+      streamRef.current?.getTracks().forEach((t) => t.stop())
+      streamRef.current = null
+      setPhoto({ url: URL.createObjectURL(blob), file })
+    } catch {
+      // כשלון בצילום — נשארים במסך המצלמה, לא עוברים לתצוגה מקדימה.
+    }
+  }
+
+  const sizeDisplayFor = (cm: number) => (cm < 1 ? `${(cm * 10).toFixed(1)} מ"מ` : `${cm} ס"מ`)
+
+  const handleSharePhoto = async () => {
+    if (!photo) return
+    setShareStatus('working')
+    const shareText = `שבוע ${week}\n${name}\n${punch}\n${sizeDisplayFor(size_cm)}\n\nAba 🥜`
+
+    if (navigator.canShare?.({ files: [photo.file] })) {
+      try {
+        await navigator.share({ files: [photo.file], text: shareText })
+        setShareStatus('saved')
+      } catch {
+        // המשתמש ביטל את חלון השיתוף — לא שגיאה.
+        setShareStatus('idle')
       }
+      setTimeout(() => setShareStatus('idle'), 2000)
+      return
+    }
 
-      // אין תמיכה בשיתוף קבצים — מורידים את התמונה למכשיר.
-      const url = URL.createObjectURL(blob)
+    try {
+      const url = URL.createObjectURL(photo.file)
       const a = document.createElement('a')
       a.href = url
-      a.download = `aba-week-${week}.png`
+      a.download = photo.file.name
       document.body.appendChild(a)
       a.click()
       a.remove()
       URL.revokeObjectURL(url)
-      setCaptureStatus('saved')
+      setShareStatus('saved')
     } catch {
-      setCaptureStatus('error')
+      setShareStatus('error')
     } finally {
-      setTimeout(() => setCaptureStatus('idle'), 2000)
+      setTimeout(() => setShareStatus('idle'), 2000)
     }
   }
 
-  const handleShare = async () => {
-    const sizeDisplay = size_cm < 1 ? `${(size_cm * 10).toFixed(1)} מ"מ` : `${size_cm} ס"מ`
-    const text = `שבוע ${week}\n${name}\n${punch}\n${sizeDisplay}\n\nAba 🥜`
+  const handleShareText = async () => {
+    const text = `שבוע ${week}\n${name}\n${punch}\n${sizeDisplayFor(size_cm)}\n\nAba 🥜`
 
     if (navigator.share) {
       try {
@@ -218,167 +233,245 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
       className="fixed inset-0 z-[200] flex flex-col"
       style={{ backgroundColor: '#000', height: '100dvh' }}
     >
-      <div
-        id="ar-flash"
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'white',
-          opacity: flashing ? 1 : 0,
-          pointerEvents: 'none',
-          zIndex: 9999,
-          transition: flashing ? 'none' : 'opacity 0.15s',
-        }}
-      />
-
-      {!cameraFailed ? (
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      ) : (
+      {photo ? (
+        // תצוגה מקדימה בסטייל פולארויד
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center gap-2"
-          style={{ backgroundColor: '#2a2a2a' }}
+          className="flex flex-1 flex-col items-center gap-6 overflow-y-auto px-6"
+          style={{
+            paddingTop: 'max(24px, env(safe-area-inset-top))',
+            paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
+            justifyContent: 'safe center',
+          }}
         >
-          <p style={{ fontSize: 13, color: '#888' }}>אין גישה למצלמה</p>
-          <p style={{ fontSize: 11, color: '#555' }}>תצוגת דמו</p>
+          <div
+            style={{
+              backgroundColor: '#fdfdfa',
+              padding: '14px 14px 56px 14px',
+              borderRadius: 4,
+              boxShadow: '0 20px 45px rgba(0,0,0,0.55)',
+              transform: 'rotate(-1.5deg)',
+              maxWidth: 320,
+              width: '100%',
+              flexShrink: 0,
+            }}
+          >
+            <img
+              src={photo.url}
+              alt={`${name} — שבוע ${week}`}
+              style={{
+                width: '100%',
+                maxHeight: '48vh',
+                objectFit: 'cover',
+                display: 'block',
+                borderRadius: 2,
+              }}
+            />
+            <p
+              style={{
+                textAlign: 'center',
+                marginTop: 14,
+                color: '#333',
+                fontSize: 14,
+                fontWeight: 700,
+              }}
+            >
+              שבוע {week} · {name}
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center gap-1 text-center" style={{ minHeight: 20 }}>
+            {shareStatus === 'working' && (
+              <p style={{ fontSize: 13, color: '#F59E0B', fontWeight: 700 }}>משתף…</p>
+            )}
+            {shareStatus === 'saved' && (
+              <p style={{ fontSize: 13, color: 'var(--color-success)', fontWeight: 700 }}>✓ נשמר</p>
+            )}
+            {shareStatus === 'error' && (
+              <p style={{ fontSize: 13, color: 'var(--color-danger)', fontWeight: 700 }}>
+                לא הצלחנו לשתף. נסו שוב.
+              </p>
+            )}
+          </div>
+
+          <div className="flex w-full gap-2" style={{ maxWidth: 320 }}>
+            <button
+              type="button"
+              onClick={handleSharePhoto}
+              style={{
+                minHeight: 48,
+                backgroundColor: '#F59E0B',
+                color: '#0A0A0A',
+                touchAction: 'manipulation',
+              }}
+              className="flex-1 rounded-xl text-sm font-bold"
+            >
+              שתף 🚀
+            </button>
+            <button
+              type="button"
+              onClick={handleClose}
+              style={{
+                minHeight: 48,
+                border: '1px solid #333',
+                color: '#ccc',
+                touchAction: 'manipulation',
+              }}
+              className="flex-1 rounded-xl text-sm font-semibold"
+            >
+              חזור למסך הבית
+            </button>
+          </div>
         </div>
-      )}
-
-      {/* HUD עליון */}
-      <div
-        className="absolute inset-x-0 top-0 flex items-start justify-between px-5 pb-8"
-        style={{
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0.75), transparent)',
-          paddingTop: 'max(20px, env(safe-area-inset-top))',
-        }}
-      >
-        <div className="flex flex-col gap-0.5">
-          <p style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700 }}>שבוע {week}</p>
-          <p style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>{name}</p>
-          <p style={{ fontSize: 13, color: '#F59E0B' }}>
-            {size_cm < 1 ? `${(size_cm * 10).toFixed(1)} מ"מ` : `${size_cm} ס"מ`} · {weight}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleClose}
-          aria-label="סגור"
-          style={{ minHeight: 44, minWidth: 44, color: '#fff' }}
-          className="flex items-center justify-center text-2xl"
-        >
-          ✕
-        </button>
-      </div>
-
-      {/* סילואט מרכזי — קנה מידה אמיתי, עלול לחרוג מגבולות המסך אצל שבועות מאוחרים */}
-      <div
-        className="relative z-10 flex flex-1 items-center justify-center"
-        style={{ pointerEvents: 'none' }}
-      >
-        <svg width={shape.width} height={shape.height} style={{ overflow: 'visible' }}>
-          {/* הילה לבנה לניגודיות מול כל רקע */}
-          <rect
-            x={0}
-            y={0}
-            width={shape.width}
-            height={shape.height}
-            rx={shape.rx}
-            ry={shape.rx}
-            fill="rgba(245,158,11,0.22)"
-            stroke="rgba(255,255,255,0.9)"
-            strokeWidth={9}
+      ) : (
+        <>
+          <div
+            id="ar-flash"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'white',
+              opacity: flashing ? 1 : 0,
+              pointerEvents: 'none',
+              zIndex: 9999,
+              transition: flashing ? 'none' : 'opacity 0.15s',
+            }}
           />
-          {/* קו כתום מלא */}
-          <rect
-            x={0}
-            y={0}
-            width={shape.width}
-            height={shape.height}
-            rx={shape.rx}
-            ry={shape.rx}
-            fill="none"
-            stroke="#F59E0B"
-            strokeWidth={5}
-          />
-        </svg>
-      </div>
 
-      {(shape.height > window.innerHeight || shape.width > window.innerWidth) && (
-        <p
-          className="pointer-events-none absolute inset-x-0 z-10 text-center"
-          style={{ top: 130, fontSize: 12, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
-        >
-          זה בקנה מידה אמיתי — התרחקו כדי לראות את כל הצורה
-        </p>
-      )}
+          {!cameraFailed ? (
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+              style={{ backgroundColor: '#2a2a2a' }}
+            >
+              <p style={{ fontSize: 13, color: '#888' }}>אין גישה למצלמה</p>
+              <p style={{ fontSize: 11, color: '#555' }}>תצוגת דמו</p>
+            </div>
+          )}
 
-      {/* HUD תחתון */}
-      <div
-        className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 px-5 pt-10"
-        style={{
-          background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)',
-          paddingBottom: 'max(32px, calc(env(safe-area-inset-bottom) + 24px))',
-        }}
-      >
-        <div className="flex flex-col items-center gap-1 text-center" style={{ minHeight: 20 }}>
-          {captureStatus === 'idle' && (
-            <p style={{ fontSize: 14, color: '#ddd' }}>כוון ליד חפץ בבית ותצלם</p>
-          )}
-          {captureStatus === 'working' && (
-            <p style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700 }}>שומר תמונה…</p>
-          )}
-          {captureStatus === 'saved' && (
-            <p style={{ fontSize: 14, color: 'var(--color-success)', fontWeight: 700 }}>✓ נשמר</p>
-          )}
-          {captureStatus === 'error' && (
-            <p style={{ fontSize: 14, color: 'var(--color-danger)', fontWeight: 700 }}>
-              לא הצלחנו לשמור. נסו שוב.
+          {/* HUD עליון */}
+          <div
+            className="absolute inset-x-0 top-0 flex items-start justify-between px-5 pb-8"
+            style={{
+              background: 'linear-gradient(to bottom, rgba(0,0,0,0.75), transparent)',
+              paddingTop: 'max(20px, env(safe-area-inset-top))',
+            }}
+          >
+            <div className="flex flex-col gap-0.5">
+              <p style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700 }}>שבוע {week}</p>
+              <p style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>{name}</p>
+              <p style={{ fontSize: 13, color: '#F59E0B' }}>
+                {size_cm < 1 ? `${(size_cm * 10).toFixed(1)} מ"מ` : `${size_cm} ס"מ`} · {weight}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleClose}
+              aria-label="סגור"
+              style={{ minHeight: 44, minWidth: 44, color: '#fff' }}
+              className="flex items-center justify-center text-2xl"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* סילואט מרכזי — קנה מידה אמיתי, עלול לחרוג מגבולות המסך אצל שבועות מאוחרים */}
+          <div
+            className="relative z-10 flex flex-1 items-center justify-center"
+            style={{ pointerEvents: 'none' }}
+          >
+            <svg width={shape.width} height={shape.height} style={{ overflow: 'visible' }}>
+              {/* הילה לבנה לניגודיות מול כל רקע */}
+              <rect
+                x={0}
+                y={0}
+                width={shape.width}
+                height={shape.height}
+                rx={shape.rx}
+                ry={shape.rx}
+                fill="rgba(245,158,11,0.22)"
+                stroke="rgba(255,255,255,0.9)"
+                strokeWidth={9}
+              />
+              {/* קו כתום מלא */}
+              <rect
+                x={0}
+                y={0}
+                width={shape.width}
+                height={shape.height}
+                rx={shape.rx}
+                ry={shape.rx}
+                fill="none"
+                stroke="#F59E0B"
+                strokeWidth={5}
+              />
+            </svg>
+          </div>
+
+          {(shape.height > window.innerHeight || shape.width > window.innerWidth) && (
+            <p
+              className="pointer-events-none absolute inset-x-0 z-10 text-center"
+              style={{ top: 130, fontSize: 12, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+            >
+              זה בקנה מידה אמיתי — התרחקו כדי לראות את כל הצורה
             </p>
           )}
-        </div>
 
-        <div className="relative flex w-full items-center justify-center gap-4" style={{ zIndex: 10000 }}>
-          <button
-            type="button"
-            onClick={handleShare}
+          {/* HUD תחתון */}
+          <div
+            className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 px-5 pt-10"
             style={{
-              minHeight: 44,
-              border: '1px solid #F59E0B',
-              color: '#F59E0B',
-              borderRadius: 50,
-              padding: '10px 20px',
-              touchAction: 'manipulation',
+              background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)',
+              paddingBottom: 'max(32px, calc(env(safe-area-inset-bottom) + 24px))',
             }}
-            className="text-sm font-semibold"
           >
-            שתף 🚀
-          </button>
-          <button
-            type="button"
-            onClick={handleSnap}
-            onTouchEnd={(e) => {
-              e.preventDefault()
-              handleSnap()
-            }}
-            aria-label="צלם"
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: '50%',
-              backgroundColor: '#F59E0B',
-              touchAction: 'manipulation',
-            }}
-            className="flex items-center justify-center text-2xl"
-          >
-            📷
-          </button>
-        </div>
-      </div>
+            <p style={{ fontSize: 14, color: '#ddd' }}>כוון ליד חפץ בבית ותצלם</p>
+
+            <div className="relative flex w-full items-center justify-center gap-4" style={{ zIndex: 10000 }}>
+              <button
+                type="button"
+                onClick={handleShareText}
+                style={{
+                  minHeight: 44,
+                  border: '1px solid #F59E0B',
+                  color: '#F59E0B',
+                  borderRadius: 50,
+                  padding: '10px 20px',
+                  touchAction: 'manipulation',
+                }}
+                className="text-sm font-semibold"
+              >
+                שתף 🚀
+              </button>
+              <button
+                type="button"
+                onClick={handleSnap}
+                onTouchEnd={(e) => {
+                  e.preventDefault()
+                  handleSnap()
+                }}
+                aria-label="צלם"
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: '50%',
+                  backgroundColor: '#F59E0B',
+                  touchAction: 'manipulation',
+                }}
+                className="flex items-center justify-center text-2xl"
+              >
+                📷
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>,
     document.body,
   )

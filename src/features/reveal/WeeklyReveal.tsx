@@ -109,11 +109,8 @@ function WeeklyReveal() {
           >
             שבוע {week}
           </p>
-          <p style={{ fontSize: 32, fontWeight: 900, color: '#fff' }}>
-            הבחור גדל.
-          </p>
-          <p style={{ fontSize: 16, color: '#555' }}>
-            נראה למה הוא דומה השבוע.
+          <p style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>
+            רוצה לראות מה הגודל של הבוטן השבוע?
           </p>
           <button
             type="button"
