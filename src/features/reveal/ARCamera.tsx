@@ -110,23 +110,30 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
         ctx.fillRect(0, 0, cw, ch)
       }
 
-      // סילואט מקווקו — במרכז, כמו שמוצג על המסך
+      // סילואט — במרכז, כמו שמוצג על המסך (הילה לבנה + קו כתום מלא, לניגודיות)
       const sx = (cw - shape.width) / 2
       const sy = (ch - shape.height) / 2
-      ctx.save()
-      ctx.fillStyle = 'rgba(245,158,11,0.12)'
-      ctx.strokeStyle = '#F59E0B'
-      ctx.lineWidth = 3
-      ctx.setLineDash([10, 5])
-      if (typeof ctx.roundRect === 'function') {
-        ctx.beginPath()
-        ctx.roundRect(sx, sy, shape.width, shape.height, shape.rx)
-        ctx.fill()
-        ctx.stroke()
-      } else {
-        ctx.fillRect(sx, sy, shape.width, shape.height)
-        ctx.strokeRect(sx, sy, shape.width, shape.height)
+      const drawSilhouette = () => {
+        if (typeof ctx.roundRect === 'function') {
+          ctx.beginPath()
+          ctx.roundRect(sx, sy, shape.width, shape.height, shape.rx)
+        } else {
+          ctx.rect(sx, sy, shape.width, shape.height)
+        }
       }
+
+      ctx.save()
+      ctx.fillStyle = 'rgba(245,158,11,0.22)'
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)'
+      ctx.lineWidth = 9
+      drawSilhouette()
+      ctx.fill()
+      ctx.stroke()
+
+      ctx.strokeStyle = '#F59E0B'
+      ctx.lineWidth = 5
+      drawSilhouette()
+      ctx.stroke()
       ctx.restore()
 
       // HUD טקסט — שבוע, שם, גודל
@@ -208,7 +215,7 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex flex-col overflow-hidden"
+      className="fixed inset-0 z-[200] flex flex-col"
       style={{ backgroundColor: '#000', height: '100dvh' }}
     >
       <div
@@ -268,9 +275,10 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
         </button>
       </div>
 
-      {/* סילואט מרכזי */}
-      <div className="flex flex-1 items-center justify-center">
+      {/* סילואט מרכזי — קנה מידה אמיתי, עלול לחרוג מגבולות המסך אצל שבועות מאוחרים */}
+      <div className="relative z-10 flex flex-1 items-center justify-center">
         <svg width={shape.width} height={shape.height} style={{ overflow: 'visible' }}>
+          {/* הילה לבנה לניגודיות מול כל רקע */}
           <rect
             x={0}
             y={0}
@@ -278,13 +286,33 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
             height={shape.height}
             rx={shape.rx}
             ry={shape.rx}
-            fill="rgba(245,158,11,0.06)"
+            fill="rgba(245,158,11,0.22)"
+            stroke="rgba(255,255,255,0.9)"
+            strokeWidth={9}
+          />
+          {/* קו כתום מלא */}
+          <rect
+            x={0}
+            y={0}
+            width={shape.width}
+            height={shape.height}
+            rx={shape.rx}
+            ry={shape.rx}
+            fill="none"
             stroke="#F59E0B"
-            strokeWidth={2}
-            strokeDasharray="8 4"
+            strokeWidth={5}
           />
         </svg>
       </div>
+
+      {(shape.height > window.innerHeight || shape.width > window.innerWidth) && (
+        <p
+          className="pointer-events-none absolute inset-x-0 z-10 text-center"
+          style={{ top: 130, fontSize: 12, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+        >
+          זה בקנה מידה אמיתי — התרחקו כדי לראות את כל הצורה
+        </p>
+      )}
 
       {/* HUD תחתון */}
       <div
