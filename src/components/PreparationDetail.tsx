@@ -59,7 +59,22 @@ function PreparationDetail({
         </p>
       )}
 
-      <p className="text-xs leading-relaxed text-neutral-500">{DISCLAIMER}</p>
+      {preparation.questions && preparation.questions.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-semibold text-[var(--text)]">שאלות לרופא:</p>
+          <ul className="flex flex-col gap-1">
+            {preparation.questions.map((q) => (
+              <li key={q} className="text-sm leading-relaxed text-neutral-300">
+                – {q}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <p className="text-xs leading-relaxed text-neutral-500">
+        {preparation.disclaimer ?? DISCLAIMER}
+      </p>
 
       <div className="flex gap-2">
         <button

@@ -77,24 +77,20 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
     onClose()
   }
 
-  const snap = () => {
-    const flash = document.getElementById('ar-flash') ?? document.querySelector('.ar-flash')
-    if (flash instanceof HTMLElement) {
-      flash.style.opacity = '1'
-      setTimeout(() => {
-        flash.style.opacity = '0'
-      }, 150)
-    } else {
-      const video = videoRef.current
-      if (video) {
-        video.style.filter = 'brightness(3)'
-        setTimeout(() => {
-          video.style.filter = ''
-        }, 150)
-      }
-    }
+  const handleSnap = () => {
+    console.log('snap fired')
+    console.log('flash el:', document.getElementById('ar-flash'))
 
-    navigator.vibrate?.(50)
+    // flash
+    const flashEl = document.getElementById('ar-flash')
+    if (flashEl) {
+      flashEl.style.opacity = '1'
+      setTimeout(() => {
+        flashEl.style.opacity = '0'
+      }, 150)
+    }
+    // haptic
+    if (navigator.vibrate) navigator.vibrate(50)
   }
 
   const handleShare = async () => {
@@ -125,14 +121,14 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
     >
       <div
         id="ar-flash"
-        className="ar-flash pointer-events-none"
         style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: '#fff',
+          background: 'white',
           opacity: 0,
-          transition: 'opacity 0.15s',
+          pointerEvents: 'none',
           zIndex: 9999,
+          transition: 'opacity 0.15s',
         }}
       />
 
@@ -221,7 +217,7 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
           </button>
           <button
             type="button"
-            onClick={snap}
+            onClick={handleSnap}
             aria-label="צלם"
             style={{
               width: 64,
