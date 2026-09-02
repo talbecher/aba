@@ -78,19 +78,23 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
   }
 
   const handleSnap = () => {
-    console.log('snap fired')
-    console.log('flash el:', document.getElementById('ar-flash'))
+    try {
+      console.log('snap fired')
+      console.log('flash el:', document.getElementById('ar-flash'))
 
-    // flash
-    const flashEl = document.getElementById('ar-flash')
-    if (flashEl) {
-      flashEl.style.opacity = '1'
-      setTimeout(() => {
-        flashEl.style.opacity = '0'
-      }, 150)
+      // flash
+      const flashEl = document.getElementById('ar-flash')
+      if (flashEl) {
+        flashEl.style.opacity = '1'
+        setTimeout(() => {
+          flashEl.style.opacity = '0'
+        }, 150)
+      }
+      // haptic
+      if (navigator.vibrate) navigator.vibrate(50)
+    } catch (err) {
+      console.error('handleSnap failed:', err)
     }
-    // haptic
-    if (navigator.vibrate) navigator.vibrate(50)
   }
 
   const handleShare = async () => {
@@ -152,8 +156,11 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
 
       {/* HUD עליון */}
       <div
-        className="absolute inset-x-0 top-0 flex items-start justify-between px-5 pb-8 pt-5"
-        style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.75), transparent)' }}
+        className="absolute inset-x-0 top-0 flex items-start justify-between px-5 pb-8"
+        style={{
+          background: 'linear-gradient(to bottom, rgba(0,0,0,0.75), transparent)',
+          paddingTop: 'max(20px, env(safe-area-inset-top))',
+        }}
       >
         <div className="flex flex-col gap-0.5">
           <p style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700 }}>שבוע {week}</p>
@@ -193,14 +200,17 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
 
       {/* HUD תחתון */}
       <div
-        className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 px-5 pb-8 pt-10"
-        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)' }}
+        className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 px-5 pt-10"
+        style={{
+          background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)',
+          paddingBottom: 'max(32px, calc(env(safe-area-inset-bottom) + 24px))',
+        }}
       >
         <div className="flex flex-col items-center gap-1 text-center">
           <p style={{ fontSize: 14, color: '#ddd' }}>כוון ליד חפץ בבית ותצלם</p>
         </div>
 
-        <div className="flex w-full items-center justify-center gap-4">
+        <div className="relative flex w-full items-center justify-center gap-4" style={{ zIndex: 10000 }}>
           <button
             type="button"
             onClick={handleShare}
@@ -210,6 +220,7 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
               color: '#F59E0B',
               borderRadius: 50,
               padding: '10px 20px',
+              touchAction: 'manipulation',
             }}
             className="text-sm font-semibold"
           >
@@ -218,12 +229,17 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
           <button
             type="button"
             onClick={handleSnap}
+            onTouchEnd={(e) => {
+              e.preventDefault()
+              handleSnap()
+            }}
             aria-label="צלם"
             style={{
               width: 64,
               height: 64,
               borderRadius: '50%',
               backgroundColor: '#F59E0B',
+              touchAction: 'manipulation',
             }}
             className="flex items-center justify-center text-2xl"
           >

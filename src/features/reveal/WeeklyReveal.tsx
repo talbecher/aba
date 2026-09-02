@@ -169,6 +169,21 @@ function WeeklyReveal() {
             >
               יאללה, תראה 👀
             </button>
+            <button
+              type="button"
+              onClick={() => setShowAR(true)}
+              style={{
+                minHeight: 44,
+                border: '1px solid #F59E0B33',
+                color: '#F59E0B',
+                borderRadius: 50,
+                padding: '10px 20px',
+                fontSize: 13,
+              }}
+              className="font-semibold"
+            >
+              📷 השווה על המצלמה
+            </button>
             <p style={{ fontSize: 11, color: '#333', marginTop: 20 }}>
               ההשוואה הבאה בעוד {NEXT_COMPARISON_DAYS} ימים.
             </p>
