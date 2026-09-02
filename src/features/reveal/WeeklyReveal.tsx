@@ -113,14 +113,28 @@ function WeeklyReveal() {
             <p style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700 }}>
               {data.size} · {data.weight}
             </p>
-            <button
-              type="button"
-              onClick={() => setPhase('share')}
-              style={{ borderColor: 'var(--accent)', color: 'var(--accent)', minHeight: 44 }}
-              className="mt-2 rounded-full border px-4 text-xs font-semibold"
-            >
-              שתף 🚀
-            </button>
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPhase('share')}
+                style={{ borderColor: 'var(--accent)', color: 'var(--accent)', minHeight: 44 }}
+                className="rounded-full border px-4 text-xs font-semibold"
+              >
+                שתף 🚀
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAR(true)}
+                style={{
+                  minHeight: 44,
+                  border: '1px solid #F59E0B33',
+                  color: '#F59E0B',
+                }}
+                className="rounded-full px-4 text-xs font-semibold"
+              >
+                📷 השווה על המצלמה
+              </button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 py-10 text-center">
