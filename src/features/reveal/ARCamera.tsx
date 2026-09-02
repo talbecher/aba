@@ -40,6 +40,7 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [cameraFailed, setCameraFailed] = useState(false)
+  const [flashing, setFlashing] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -79,26 +80,9 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
   }
 
   const handleSnap = () => {
-    // DIAGNOSTIC — temporary, remove once click registration is confirmed.
-    alert('SNAP CLICKED ' + Date.now())
-
-    try {
-      console.log('snap fired')
-      console.log('flash el:', document.getElementById('ar-flash'))
-
-      // flash
-      const flashEl = document.getElementById('ar-flash')
-      if (flashEl) {
-        flashEl.style.opacity = '1'
-        setTimeout(() => {
-          flashEl.style.opacity = '0'
-        }, 150)
-      }
-      // haptic
-      if (navigator.vibrate) navigator.vibrate(50)
-    } catch (err) {
-      console.error('handleSnap failed:', err)
-    }
+    setFlashing(true)
+    setTimeout(() => setFlashing(false), 150)
+    navigator.vibrate?.(50)
   }
 
   const handleShare = async () => {
@@ -133,10 +117,10 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
           position: 'fixed',
           inset: 0,
           background: 'white',
-          opacity: 0,
+          opacity: flashing ? 1 : 0,
           pointerEvents: 'none',
           zIndex: 9999,
-          transition: 'opacity 0.15s',
+          transition: flashing ? 'none' : 'opacity 0.15s',
         }}
       />
 
