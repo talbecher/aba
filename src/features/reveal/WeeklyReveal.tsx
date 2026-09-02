@@ -90,51 +90,55 @@ function WeeklyReveal() {
     if (!showStats) setShowStats(true)
   }
 
-  const isCompact = phase === 'teaser' && alreadyRevealedThisWeek
+  const handleReopenReveal = () => {
+    setShowStats(true)
+    setShowButtons(true)
+    setPhase('reveal')
+  }
 
   return (
     <div
       className="mx-5 flex flex-col overflow-hidden rounded-2xl"
       style={{
         backgroundColor: '#0A0A0A',
-        minHeight: isCompact ? undefined : 520,
+        minHeight: 520,
       }}
     >
       {phase === 'teaser' &&
         (alreadyRevealedThisWeek ? (
-          <div className="flex flex-col items-center gap-2 px-6 py-6 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 py-10 text-center">
+            <p
+              style={{
+                fontSize: 11,
+                color: '#444',
+                textTransform: 'uppercase',
+                letterSpacing: '0.2em',
+              }}
+            >
+              שבוע {week}
+            </p>
             <p style={{ fontSize: 56, lineHeight: 1 }}>{data.emoji}</p>
-            <p style={{ fontSize: 20, fontWeight: 900, color: '#fff' }}>
+            <p style={{ fontSize: 24, fontWeight: 900, color: '#fff' }}>
               {data.name}
             </p>
-            <p style={{ fontSize: 13, color: '#777', fontStyle: 'italic' }}>
-              {data.punch}
+            <button
+              type="button"
+              onClick={handleReopenReveal}
+              style={{
+                backgroundColor: '#F59E0B',
+                color: '#0A0A0A',
+                fontWeight: 900,
+                fontSize: 17,
+                padding: '18px 48px',
+                borderRadius: 50,
+                minHeight: 44,
+              }}
+            >
+              תראו לי שוב 👀
+            </button>
+            <p style={{ fontSize: 11, color: '#333', marginTop: 20 }}>
+              ההשוואה הבאה בעוד {NEXT_COMPARISON_DAYS} ימים.
             </p>
-            <p style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700 }}>
-              {data.size} · {data.weight}
-            </p>
-            <div className="mt-2 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPhase('share')}
-                style={{ borderColor: 'var(--accent)', color: 'var(--accent)', minHeight: 44 }}
-                className="rounded-full border px-4 text-xs font-semibold"
-              >
-                שתף 🚀
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowAR(true)}
-                style={{
-                  minHeight: 44,
-                  border: '1px solid #F59E0B33',
-                  color: '#F59E0B',
-                }}
-                className="rounded-full px-4 text-xs font-semibold"
-              >
-                📷 השווה על המצלמה
-              </button>
-            </div>
           </div>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 py-10 text-center">

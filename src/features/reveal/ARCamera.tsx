@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 const PX_PER_CM = 37.8
 
@@ -118,7 +119,7 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
 
   const shape = shapeFor(size_cm)
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[200] flex flex-col overflow-hidden"
       style={{ backgroundColor: '#000', height: '100dvh' }}
@@ -247,7 +248,8 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
