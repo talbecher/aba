@@ -41,6 +41,7 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
   const streamRef = useRef<MediaStream | null>(null)
   const [cameraFailed, setCameraFailed] = useState(false)
   const [flashing, setFlashing] = useState(false)
+  const [captureStatus, setCaptureStatus] = useState<'idle' | 'working' | 'saved' | 'error'>('idle')
 
   useEffect(() => {
     let cancelled = false
@@ -83,6 +84,105 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
     setFlashing(true)
     setTimeout(() => setFlashing(false), 150)
     navigator.vibrate?.(50)
+    void capturePhoto()
+  }
+
+  const capturePhoto = async () => {
+    setCaptureStatus('working')
+    try {
+      const cw = window.innerWidth
+      const ch = window.innerHeight
+      const canvas = document.createElement('canvas')
+      canvas.width = cw
+      canvas.height = ch
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('no 2d context')
+
+      // רקע — פריים נוכחי מהמצלמה (או רקע דמו אם אין הרשאה)
+      const video = videoRef.current
+      if (!cameraFailed && video && video.videoWidth) {
+        const scale = Math.max(cw / video.videoWidth, ch / video.videoHeight)
+        const dw = video.videoWidth * scale
+        const dh = video.videoHeight * scale
+        ctx.drawImage(video, (cw - dw) / 2, (ch - dh) / 2, dw, dh)
+      } else {
+        ctx.fillStyle = '#2a2a2a'
+        ctx.fillRect(0, 0, cw, ch)
+      }
+
+      // סילואט מקווקו — במרכז, כמו שמוצג על המסך
+      const sx = (cw - shape.width) / 2
+      const sy = (ch - shape.height) / 2
+      ctx.save()
+      ctx.fillStyle = 'rgba(245,158,11,0.12)'
+      ctx.strokeStyle = '#F59E0B'
+      ctx.lineWidth = 3
+      ctx.setLineDash([10, 5])
+      if (typeof ctx.roundRect === 'function') {
+        ctx.beginPath()
+        ctx.roundRect(sx, sy, shape.width, shape.height, shape.rx)
+        ctx.fill()
+        ctx.stroke()
+      } else {
+        ctx.fillRect(sx, sy, shape.width, shape.height)
+        ctx.strokeRect(sx, sy, shape.width, shape.height)
+      }
+      ctx.restore()
+
+      // HUD טקסט — שבוע, שם, גודל
+      const sizeDisplay = size_cm < 1 ? `${(size_cm * 10).toFixed(1)} מ"מ` : `${size_cm} ס"מ`
+      ctx.textAlign = 'right'
+      ctx.textBaseline = 'top'
+      ctx.fillStyle = '#F59E0B'
+      ctx.font = 'bold 20px sans-serif'
+      ctx.fillText(`שבוע ${week}`, cw - 24, 40)
+      ctx.fillStyle = '#fff'
+      ctx.font = '900 32px sans-serif'
+      ctx.fillText(name, cw - 24, 68)
+      ctx.fillStyle = '#F59E0B'
+      ctx.font = '600 22px sans-serif'
+      ctx.fillText(`${sizeDisplay} · ${weight}`, cw - 24, 108)
+
+      ctx.textAlign = 'center'
+      ctx.fillStyle = '#fff'
+      ctx.font = 'bold 22px sans-serif'
+      ctx.fillText('Aba 🥜', cw / 2, ch - 40)
+
+      const blob: Blob | null = await new Promise((resolve) =>
+        canvas.toBlob((b) => resolve(b), 'image/png'),
+      )
+      if (!blob) throw new Error('canvas.toBlob returned null')
+
+      const file = new File([blob], `aba-week-${week}.png`, { type: 'image/png' })
+      const shareText = `שבוע ${week}\n${name}\n${punch}\n${sizeDisplay}\n\nAba 🥜`
+
+      if (navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], text: shareText })
+          setCaptureStatus('saved')
+          return
+        } catch {
+          // המשתמש ביטל את חלון השיתוף — לא שגיאה.
+          setCaptureStatus('idle')
+          return
+        }
+      }
+
+      // אין תמיכה בשיתוף קבצים — מורידים את התמונה למכשיר.
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `aba-week-${week}.png`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      setCaptureStatus('saved')
+    } catch {
+      setCaptureStatus('error')
+    } finally {
+      setTimeout(() => setCaptureStatus('idle'), 2000)
+    }
   }
 
   const handleShare = async () => {
@@ -194,8 +294,21 @@ function ARCamera({ week, name, size_cm, weight, punch, onClose }: ARCameraProps
           paddingBottom: 'max(32px, calc(env(safe-area-inset-bottom) + 24px))',
         }}
       >
-        <div className="flex flex-col items-center gap-1 text-center">
-          <p style={{ fontSize: 14, color: '#ddd' }}>כוון ליד חפץ בבית ותצלם</p>
+        <div className="flex flex-col items-center gap-1 text-center" style={{ minHeight: 20 }}>
+          {captureStatus === 'idle' && (
+            <p style={{ fontSize: 14, color: '#ddd' }}>כוון ליד חפץ בבית ותצלם</p>
+          )}
+          {captureStatus === 'working' && (
+            <p style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700 }}>שומר תמונה…</p>
+          )}
+          {captureStatus === 'saved' && (
+            <p style={{ fontSize: 14, color: 'var(--color-success)', fontWeight: 700 }}>✓ נשמר</p>
+          )}
+          {captureStatus === 'error' && (
+            <p style={{ fontSize: 14, color: 'var(--color-danger)', fontWeight: 700 }}>
+              לא הצלחנו לשמור. נסו שוב.
+            </p>
+          )}
         </div>
 
         <div className="relative flex w-full items-center justify-center gap-4" style={{ zIndex: 10000 }}>
