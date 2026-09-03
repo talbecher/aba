@@ -1,10 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { KnowledgeLevel, Tone, UserState } from '../types/user'
+import type { Tone, UserState } from '../types/user'
 
 interface UserStore extends UserState {
   setTone: (tone: Tone) => void
-  setKnowledgeLevel: (level: KnowledgeLevel) => void
   setDueDate: (date: string) => void
   setManualWeekOverride: (week: number | null) => void
   setIsFirstBaby: (val: boolean) => void
@@ -19,7 +18,6 @@ interface UserStore extends UserState {
 
 const initialState: UserState = {
   tone: 'bro',
-  knowledge_level: 'medium',
   is_first_baby: true,
   due_date: null,
   manual_week_override: null,
@@ -37,7 +35,6 @@ export const useUserStore = create<UserStore>()(
     (set) => ({
       ...initialState,
       setTone: (tone) => set({ tone }),
-      setKnowledgeLevel: (knowledge_level) => set({ knowledge_level }),
       setDueDate: (due_date) => set({ due_date }),
       setManualWeekOverride: (manual_week_override) =>
         set({ manual_week_override }),

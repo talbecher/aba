@@ -17,76 +17,6 @@ function getTrimester(week: number): 1 | 2 | 3 {
   return 3
 }
 
-interface TaskCardProps {
-  title: string
-  description: string
-  done: boolean
-  onToggle: () => void
-}
-
-function TaskCard({ title, description, done, onToggle }: TaskCardProps) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-label={done ? `בטל סימון: ${title}` : `סמן כבוצע: ${title}`}
-      aria-pressed={done}
-      className="flex w-full flex-col rounded-2xl p-4 text-right"
-      style={{
-        minHeight: 140,
-        backgroundColor: done ? 'rgba(16,185,129,0.08)' : 'var(--bg-card)',
-        border: `1px solid ${done ? 'var(--color-success)' : 'var(--border)'}`,
-        transition: 'background-color 250ms ease, border-color 250ms ease',
-      }}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <p
-          className="font-bold"
-          style={{
-            fontSize: 15,
-            lineHeight: 1.3,
-            color: done ? 'var(--text-secondary)' : 'var(--text)',
-            textDecoration: done ? 'line-through' : 'none',
-          }}
-        >
-          {title}
-        </p>
-        <span
-          className="shrink-0"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 28,
-            height: 28,
-            borderRadius: '50%',
-            border: `2px solid ${done ? 'var(--color-success)' : 'var(--text-muted)'}`,
-            backgroundColor: done ? 'var(--color-success)' : 'transparent',
-            transition: 'background-color 250ms ease, border-color 250ms ease',
-          }}
-        >
-          <span
-            style={{
-              display: 'inline-block',
-              color: '#0A0A0A',
-              fontSize: 15,
-              fontWeight: 900,
-              transform: done ? 'scale(1) rotate(0deg)' : 'scale(0) rotate(-45deg)',
-              transition: 'transform 350ms cubic-bezier(.34,1.56,.64,1)',
-            }}
-          >
-            ✓
-          </span>
-        </span>
-      </div>
-
-      <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6, marginTop: 8 }}>
-        {description}
-      </p>
-    </button>
-  )
-}
-
 function HomeScreen() {
   const navigate = useNavigate()
   const week = useCurrentWeek()
@@ -100,7 +30,7 @@ function HomeScreen() {
   const toggleCompletedTask = useUserStore((state) => state.toggleCompletedTask)
   const addPlannedEvent = useUserStore((state) => state.addPlannedEvent)
   const showManualWeekNotice = !dueDate && manualWeekOverride !== null
-  const { next, upNext } = useJourneyPreview()
+  const { next } = useJourneyPreview()
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [dueDateInput, setDueDateInput] = useState(dueDate ?? '')
@@ -288,132 +218,139 @@ function HomeScreen() {
         </BottomSheet>
       )}
 
-      {(next || upNext.length > 0) && (
-        <section
-          className="mx-5 rounded-2xl p-4"
-          style={{ border: '1px solid #3B82F644', backgroundColor: '#0d1117' }}
-        >
-          {next && (
-            <>
-              <div className="mb-2 flex items-center justify-between">
-                <h2
-                  className="text-sm font-semibold"
-                  style={{ color: 'var(--color-info)' }}
-                >
-                  📍 באופק
-                </h2>
-                <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                  style={{
-                    backgroundColor: 'rgba(59,130,246,0.12)',
-                    color: 'var(--color-info)',
-                  }}
-                >
-                  {next.badge}
-                </span>
-              </div>
-              <p style={{ fontSize: 12, color: '#888' }}>
-                {next.daysUntil === 0
-                  ? 'היום'
-                  : next.daysUntil === 1
-                    ? 'מחר'
-                    : `בעוד ${next.daysUntil} ימים`}
-              </p>
-              <p className="mt-1" style={{ fontSize: 18, fontWeight: 700 }}>
-                {next.title}
-              </p>
-              {next.desc && (
-                <p
-                  className="mt-1 truncate"
-                  style={{ fontSize: 14, color: '#888' }}
-                >
-                  {next.desc}
-                </p>
-              )}
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleWhatToKnow}
-                  style={{
-                    minHeight: 44,
-                    backgroundColor: 'var(--color-info)',
-                    color: '#0A0A0A',
-                  }}
-                  className="flex-1 rounded-xl text-sm font-semibold"
-                >
-                  {next.type === 'task' ? 'פתח הכנה' : 'מה צריך לדעת'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAddNextToCalendar}
-                  style={{ minHeight: 44, borderColor: '#333', color: '#888' }}
-                  className="flex-1 rounded-xl border text-sm font-semibold"
-                >
-                  הוסף ליומן
-                </button>
-              </div>
-            </>
-          )}
+      <WeeklyReveal />
 
-          {upNext.length > 0 && (
-            <div className={`flex flex-col gap-1 ${next ? 'mt-4' : ''}`}>
-              {upNext.map((event) => (
-                <p key={event.week} style={{ fontSize: 12, color: '#666' }}>
-                  שבוע {event.week} · {event.title}
-                </p>
-              ))}
+      <section
+        className="mx-5 rounded-2xl p-4"
+        style={{ border: '1px solid #3B82F644', backgroundColor: '#0d1117' }}
+      >
+        {next ? (
+          <>
+            <div className="mb-2 flex items-center justify-between">
+              <h2
+                className="text-sm font-semibold"
+                style={{ color: 'var(--color-info)' }}
+              >
+                📍 באופק
+              </h2>
+              <span
+                className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                style={{
+                  backgroundColor: 'rgba(59,130,246,0.12)',
+                  color: 'var(--color-info)',
+                }}
+              >
+                {next.badge}
+              </span>
             </div>
-          )}
+            <p style={{ fontSize: 12, color: '#888' }}>
+              {next.daysUntil === 0
+                ? 'היום'
+                : next.daysUntil === 1
+                  ? 'מחר'
+                  : next.daysUntil > 21
+                    ? `בעוד ${Math.round(next.daysUntil / 7)} שבועות`
+                    : `בעוד ${next.daysUntil} ימים`}
+            </p>
+            <p className="mt-1" style={{ fontSize: 18, fontWeight: 700 }}>
+              {next.title}
+            </p>
+            {next.desc && (
+              <p
+                className="mt-1 truncate"
+                style={{ fontSize: 14, color: '#888' }}
+              >
+                {next.desc}
+              </p>
+            )}
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={handleWhatToKnow}
+                style={{
+                  minHeight: 44,
+                  backgroundColor: 'var(--color-info)',
+                  color: '#0A0A0A',
+                }}
+                className="flex-1 rounded-xl text-sm font-semibold"
+              >
+                {next.type === 'task' ? 'פתח הכנה' : 'מה צריך לדעת'}
+              </button>
+              <button
+                type="button"
+                onClick={handleAddNextToCalendar}
+                style={{ minHeight: 44, borderColor: '#333', color: '#888' }}
+                className="flex-1 rounded-xl border text-sm font-semibold"
+              >
+                הוסף ליומן
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className="py-2 text-center" style={{ fontSize: 14, color: '#888' }}>
+            כל האירועים הגדולים מאחוריכם.
+          </p>
+        )}
 
-          <button
-            type="button"
-            onClick={() => navigate('/journey')}
-            className="mt-3 text-xs font-semibold"
-            style={{ color: 'var(--color-info)' }}
-          >
-            פתח את כל המסע →
-          </button>
-        </section>
-      )}
+        <button
+          type="button"
+          onClick={() => navigate('/journey')}
+          className="mt-3 text-xs font-semibold"
+          style={{ color: 'var(--color-info)' }}
+        >
+          פתח את כל המסע →
+        </button>
+      </section>
 
       <section
         className="mx-5 rounded-2xl p-4"
         style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
       >
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold">המשימות שלך השבוע 🎯</h2>
-          {relevantTasks.length > 0 && (
-            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }} dir="ltr">
-              {allTasksDone ? relevantTasks.length : safeTaskIndex + 1}/
-              {relevantTasks.length}
-            </span>
-          )}
-        </div>
+        <h2 className="mb-3 text-sm font-semibold">המשימות שלך השבוע 🎯</h2>
 
         {currentTask && !allTasksDone && (
           <>
-            <TaskCard
-              title={currentTask.title}
-              description={currentTask.description}
-              done={completedTasks.includes(currentTask.id)}
-              onToggle={() => {
-                const willBeDone = !completedTasks.includes(currentTask.id)
-                toggleCompletedTask(currentTask.id)
-                if (willBeDone) navigator.vibrate?.([30])
+            <p
+              className="font-bold"
+              style={{
+                fontSize: 15,
+                lineHeight: 1.3,
+                color: completedTasks.includes(currentTask.id)
+                  ? 'var(--text-secondary)'
+                  : 'var(--text)',
+                textDecoration: completedTasks.includes(currentTask.id)
+                  ? 'line-through'
+                  : 'none',
               }}
-            />
+            >
+              {currentTask.title}
+            </p>
+            <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6, marginTop: 8 }}>
+              {currentTask.description}
+            </p>
 
-            {relevantTasks.length > 1 && (
-              <div className="mt-3 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setTaskIndex((i) => Math.max(0, i - 1))}
-                  disabled={safeTaskIndex === 0}
-                  style={{ minHeight: 44 }}
-                  className="flex-1 rounded-xl border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)] disabled:opacity-30"
-                >
-                  → הקודמת
-                </button>
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const willBeDone = !completedTasks.includes(currentTask.id)
+                  toggleCompletedTask(currentTask.id)
+                  if (willBeDone) navigator.vibrate?.([30])
+                }}
+                aria-pressed={completedTasks.includes(currentTask.id)}
+                style={{
+                  minHeight: 44,
+                  backgroundColor: completedTasks.includes(currentTask.id)
+                    ? 'var(--color-success)'
+                    : 'transparent',
+                  border: `1px solid ${completedTasks.includes(currentTask.id) ? 'var(--color-success)' : 'var(--border)'}`,
+                  color: completedTasks.includes(currentTask.id) ? '#0A0A0A' : 'var(--text)',
+                }}
+                className="flex-1 rounded-xl text-sm font-semibold"
+              >
+                סיימתי ✅
+              </button>
+              {relevantTasks.length > 1 && (
                 <button
                   type="button"
                   onClick={() =>
@@ -423,10 +360,10 @@ function HomeScreen() {
                   style={{ minHeight: 44 }}
                   className="flex-1 rounded-xl border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)] disabled:opacity-30"
                 >
-                  משימה הבאה ←
+                  הבאה →
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </>
         )}
 
@@ -445,8 +382,6 @@ function HomeScreen() {
           </div>
         )}
       </section>
-
-      <WeeklyReveal />
 
       <p style={{ fontSize: 12, color: '#444', textAlign: 'center' }}>
         השבוע הבא: משהו קטן יותר ממה שאתה חושב. נפתח בעוד 7 ימים.

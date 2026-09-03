@@ -97,41 +97,82 @@ function WeeklyReveal() {
         minHeight: 520,
       }}
     >
-      {phase === 'teaser' && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 py-10 text-center">
-          <p
-            style={{
-              fontSize: 11,
-              color: '#444',
-              textTransform: 'uppercase',
-              letterSpacing: '0.2em',
-            }}
-          >
-            שבוע {week}
-          </p>
-          <p style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>
-            רוצה לראות מה הגודל של הבוטן השבוע?
-          </p>
-          <button
-            type="button"
-            onClick={handleStartReveal}
-            style={{
-              backgroundColor: '#F59E0B',
-              color: '#0A0A0A',
-              fontWeight: 900,
-              fontSize: 17,
-              padding: '18px 48px',
-              borderRadius: 50,
-              minHeight: 44,
-            }}
-          >
-            יאללה, תראה 👀
-          </button>
-          <p style={{ fontSize: 11, color: '#333', marginTop: 20 }}>
-            ההשוואה הבאה בעוד {NEXT_COMPARISON_DAYS} ימים.
-          </p>
-        </div>
-      )}
+      {phase === 'teaser' &&
+        (revealedWeeks.includes(week) ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-2 px-8 py-10 text-center">
+            <p style={{ fontSize: 11, color: '#555' }}>שבוע {week} · נחשף ✓</p>
+            <p style={{ fontSize: 48, textAlign: 'center' }}>{data.emoji}</p>
+            <p style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{data.name}</p>
+            <p style={{ fontSize: 13, fontStyle: 'italic', color: '#666' }}>{data.punch}</p>
+            <p style={{ fontSize: 13, color: 'var(--accent)' }}>
+              {data.size} · {data.weight}
+            </p>
+
+            <div className="mt-3 flex w-full gap-2" style={{ maxWidth: 320 }}>
+              <button
+                type="button"
+                onClick={() => setShowAR(true)}
+                style={{
+                  minHeight: 44,
+                  border: '1px solid #F59E0B33',
+                  color: '#F59E0B',
+                }}
+                className="flex-1 rounded-xl text-sm font-semibold"
+              >
+                📷 השווה על המצלמה
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCollectionView('summary')
+                  setPhase('collection')
+                }}
+                style={{ minHeight: 44, borderColor: '#222', color: '#666' }}
+                className="flex-1 rounded-xl border text-sm font-semibold"
+              >
+                האוסף שלי →
+              </button>
+            </div>
+
+            <p style={{ fontSize: 12, color: '#444', textAlign: 'center', marginTop: 8 }}>
+              השבוע הבא: השוואה הזויה אחרת.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 py-10 text-center">
+            <p
+              style={{
+                fontSize: 11,
+                color: '#444',
+                textTransform: 'uppercase',
+                letterSpacing: '0.2em',
+              }}
+            >
+              שבוע {week}
+            </p>
+            <p style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>
+              רוצה לראות מה הגודל של הבוטן השבוע?
+            </p>
+            <button
+              type="button"
+              onClick={handleStartReveal}
+              style={{
+                backgroundColor: '#F59E0B',
+                color: '#0A0A0A',
+                fontWeight: 900,
+                fontSize: 17,
+                padding: '18px 48px',
+                borderRadius: 50,
+                minHeight: 44,
+              }}
+            >
+              יאללה, תראה 👀
+            </button>
+            <p style={{ fontSize: 11, color: '#333', marginTop: 20 }}>
+              ההשוואה הבאה בעוד {NEXT_COMPARISON_DAYS} ימים.
+            </p>
+          </div>
+        ))}
 
       {phase === 'reveal' && (
         <div

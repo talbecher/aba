@@ -1,14 +1,13 @@
 import { useState } from 'react'
-import { calculateEddFromConception } from '../../lib/week'
 import { useUserStore } from '../../store/useUserStore'
 
 interface StepWhenProps {
-  onNext: () => void
+  onComplete: () => void
 }
 
-type Method = 'due_date' | 'current_week' | 'conception'
+type Method = 'due_date' | 'current_week'
 
-function StepWhen({ onNext }: StepWhenProps) {
+function StepWhen({ onComplete }: StepWhenProps) {
   const setDueDate = useUserStore((state) => state.setDueDate)
   const setManualWeekOverride = useUserStore(
     (state) => state.setManualWeekOverride,
@@ -17,143 +16,109 @@ function StepWhen({ onNext }: StepWhenProps) {
   const [method, setMethod] = useState<Method | null>(null)
   const [dueDateInput, setDueDateInput] = useState('')
   const [weekSlider, setWeekSlider] = useState(20)
-  const [conceptionMonth, setConceptionMonth] = useState('')
 
-  const handleDueDateConfirm = () => {
-    if (!dueDateInput) return
-    setDueDate(dueDateInput)
-    onNext()
-  }
+  const canSubmit =
+    (method === 'due_date' && !!dueDateInput) || method === 'current_week'
 
-  const handleWeekConfirm = () => {
-    setManualWeekOverride(weekSlider)
-    onNext()
-  }
-
-  const handleConceptionConfirm = () => {
-    if (!conceptionMonth) return
-    setDueDate(calculateEddFromConception(conceptionMonth))
-    onNext()
-  }
-
-  const handleSkip = () => {
-    // לא מנחשים שבוע — אם המשתמש דילג, המסך הראשי יבקש ממנו לבחור בעצמו.
-    onNext()
+  const handleSubmit = () => {
+    if (!canSubmit) return
+    if (method === 'due_date') {
+      setDueDate(dueDateInput)
+    } else {
+      setManualWeekOverride(weekSlider)
+    }
+    onComplete()
   }
 
   return (
-    <div className="flex h-full flex-col justify-between p-6">
-      <div className="flex flex-col gap-4 pt-12">
-        <h1 className="text-2xl font-bold">מתי אתם צפויים להיפגש?</h1>
+    <div
+      className="flex h-full flex-col gap-8 px-6 pb-8 pt-14"
+      style={{ backgroundColor: '#0A0A0A', color: '#fff' }}
+    >
+      <p
+        className="text-center font-black"
+        style={{ fontSize: 32, color: 'var(--accent)' }}
+      >
+        Aba
+      </p>
 
-        <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => setMethod('due_date')}
-            className={`rounded-xl border p-4 text-right ${
-              method === 'due_date'
-                ? 'border-accent'
-                : 'border-neutral-700 bg-neutral-900'
-            }`}
-          >
-            תאריך לידה משוער
-          </button>
-          {method === 'due_date' && (
-            <div className="flex flex-col gap-3 rounded-xl bg-neutral-900 p-4">
-              <input
-                type="date"
-                value={dueDateInput}
-                onChange={(e) => setDueDateInput(e.target.value)}
-                className="w-full rounded-xl border border-neutral-700 bg-neutral-950 p-4 text-lg text-neutral-100 focus:border-accent focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={handleDueDateConfirm}
-                disabled={!dueDateInput}
-                className="w-full rounded-xl bg-accent p-3 font-semibold text-neutral-950 disabled:opacity-40"
-              >
-                אישור
-              </button>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setMethod('current_week')}
-            className={`rounded-xl border p-4 text-right ${
-              method === 'current_week'
-                ? 'border-accent'
-                : 'border-neutral-700 bg-neutral-900'
-            }`}
-          >
-            שבוע נוכחי
-          </button>
-          {method === 'current_week' && (
-            <div className="flex flex-col gap-3 rounded-xl bg-neutral-900 p-4">
-              <div className="text-center text-lg font-semibold text-accent">
-                שבוע {weekSlider}
-              </div>
-              <input
-                type="range"
-                min={1}
-                max={40}
-                value={weekSlider}
-                onChange={(e) => setWeekSlider(Number(e.target.value))}
-                className="w-full accent-accent"
-              />
-              <button
-                type="button"
-                onClick={handleWeekConfirm}
-                className="w-full rounded-xl bg-accent p-3 font-semibold text-neutral-950"
-              >
-                אישור
-              </button>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setMethod('conception')}
-            className={`rounded-xl border p-4 text-right ${
-              method === 'conception'
-                ? 'border-accent'
-                : 'border-neutral-700 bg-neutral-900'
-            }`}
-          >
-            תאריך כניסה להריון
-          </button>
-          {method === 'conception' && (
-            <div className="flex flex-col gap-3 rounded-xl bg-neutral-900 p-4">
-              <input
-                type="month"
-                value={conceptionMonth}
-                onChange={(e) => setConceptionMonth(e.target.value)}
-                className="w-full rounded-xl border border-neutral-700 bg-neutral-950 p-4 text-lg text-neutral-100 focus:border-accent focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={handleConceptionConfirm}
-                disabled={!conceptionMonth}
-                className="w-full rounded-xl bg-accent p-3 font-semibold text-neutral-950 disabled:opacity-40"
-              >
-                אישור
-              </button>
-            </div>
-          )}
-        </div>
-
-        <p className="text-sm text-neutral-400">
-          לא חייב עכשיו — אפשר להוסיף אחר כך
+      <div className="flex flex-col gap-2 text-center">
+        <h1 className="font-bold" style={{ fontSize: 24, color: '#fff' }}>
+          מתי הבוטן שלכם מגיע?
+        </h1>
+        <p style={{ fontSize: 14, color: '#555' }}>
+          נשתמש בזה כדי להתאים את כל התוכן
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={handleSkip}
-        className="w-full rounded-xl border border-neutral-700 p-4 text-neutral-300"
-      >
-        אשאל אותה ואעדכן מאוחר יותר
-      </button>
+      <div className="flex flex-col gap-3">
+        <button
+          type="button"
+          onClick={() => setMethod('due_date')}
+          style={{
+            minHeight: 44,
+            border: `1px solid ${method === 'due_date' ? 'var(--accent)' : '#333'}`,
+            backgroundColor: '#111',
+          }}
+          className="rounded-xl p-4 text-right text-white"
+        >
+          יש לי תאריך לידה משוער
+        </button>
+        {method === 'due_date' && (
+          <input
+            type="date"
+            value={dueDateInput}
+            onChange={(e) => setDueDateInput(e.target.value)}
+            style={{ minHeight: 48 }}
+            className="w-full rounded-xl border border-neutral-700 bg-neutral-950 p-4 text-lg text-neutral-100 focus:border-accent focus:outline-none"
+          />
+        )}
+
+        <button
+          type="button"
+          onClick={() => setMethod('current_week')}
+          style={{
+            minHeight: 44,
+            border: `1px solid ${method === 'current_week' ? 'var(--accent)' : '#333'}`,
+            backgroundColor: '#111',
+          }}
+          className="rounded-xl p-4 text-right text-white"
+        >
+          אני יודע באיזה שבוע
+        </button>
+        {method === 'current_week' && (
+          <div className="flex flex-col gap-3 rounded-xl bg-neutral-900 p-4">
+            <div className="text-center text-lg font-semibold text-accent">
+              שבוע {weekSlider}
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={40}
+              value={weekSlider}
+              onChange={(e) => setWeekSlider(Number(e.target.value))}
+              className="w-full accent-accent"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="mt-auto">
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          style={{
+            minHeight: 52,
+            backgroundColor: 'var(--accent)',
+            color: '#0A0A0A',
+            borderRadius: 50,
+          }}
+          className="w-full font-bold disabled:opacity-40"
+        >
+          יאללה, נתחיל →
+        </button>
+      </div>
     </div>
   )
 }
