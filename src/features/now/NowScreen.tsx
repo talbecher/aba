@@ -88,31 +88,31 @@ function NowScreen() {
 
       {rich ? (
         <>
-          <p className="text-xl font-black">{rich.headline}</p>
+          <p className="text-xl font-black">
+            שבוע {week} — {rich.dad.focus}
+          </p>
 
-          {/* baby */}
+          {/* HERO — הדבר שלך עכשיו */}
           <section
-            className="rounded-2xl p-4"
-            style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
+            style={{
+              backgroundColor: '#1a1000',
+              border: '1px solid #F59E0B44',
+              borderRadius: 16,
+              padding: 20,
+            }}
           >
-            <h2 className="mb-1 text-sm font-semibold">{rich.baby.title}</h2>
-            {detailsOpen && (
-              <>
-                <p className="mt-1" style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>
-                  {rich.baby.detail}
-                </p>
-                <p className="mt-1 italic" style={{ fontSize: 14, color: '#666' }}>
-                  {rich.baby.aba_line}
-                </p>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={() => setDetailsOpen((v) => !v)}
-              className="mt-2 text-xs font-semibold text-accent"
+            <p
+              style={{
+                fontSize: 11,
+                color: '#F59E0B',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+              }}
             >
-              {detailsOpen ? 'הצג פחות ↑' : 'עוד פרטים ↓'}
-            </button>
+              הדבר שלך עכשיו
+            </p>
+            <p style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>{rich.dad.focus}</p>
+            <p style={{ fontSize: 20, fontWeight: 900, color: '#fff' }}>{rich.dad.action}</p>
           </section>
 
           {/* she */}
@@ -124,36 +124,57 @@ function NowScreen() {
             <div className="flex flex-col gap-3">
               {rich.she.symptoms.map((symptom) => (
                 <div key={symptom.text}>
-                  <p className="text-sm" style={{ color: 'var(--text)' }}>
-                    • {symptom.text}
+                  <p className="text-sm font-bold" style={{ color: '#fff' }}>
+                    {symptom.action}
                   </p>
-                  <p className="mt-0.5 text-sm italic" style={{ color: '#888' }}>
-                    💡 {symptom.action}
+                  <p className="mt-0.5 text-sm" style={{ color: '#666' }}>
+                    למה: {symptom.text}
                   </p>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* dad */}
-          <section
-            className="rounded-2xl p-4"
-            style={{ border: '1px solid var(--accent)', backgroundColor: 'var(--bg-card)' }}
-          >
-            <h2 className="mb-2 text-sm font-semibold text-accent">{rich.dad.focus}</h2>
-            <p style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.6 }}>
-              {rich.dad.action}
-            </p>
-          </section>
-
-          {/* fact */}
+          {/* baby */}
           <section
             className="rounded-2xl p-4"
             style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
           >
-            <p style={{ fontSize: 14, color: 'var(--color-knowledge)' }}>{rich.fact.text}</p>
-            <p className="mt-1 text-xs" style={{ color: '#555' }}>{rich.fact.source}</p>
+            <h2 className="mb-2 text-sm font-semibold">מה קורה לבוטן</h2>
+            <p className="font-bold" style={{ color: '#fff' }}>{rich.baby.title}</p>
+            <p className="mt-1 italic" style={{ fontSize: 14, color: '#888' }}>
+              {rich.baby.aba_line}
+            </p>
+
+            {detailsOpen && (
+              <p className="mt-2" style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>
+                {rich.baby.detail}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => setDetailsOpen((v) => !v)}
+              className="mt-2 text-xs font-semibold text-accent"
+            >
+              {detailsOpen ? 'הצג פחות ↑' : 'עוד פרטים ↓'}
+            </button>
           </section>
+
+          {/* fact — שורה, לא section מלא */}
+          <div className="flex flex-col gap-1 px-1">
+            <p style={{ fontSize: 13, color: '#555' }}>{rich.fact.text}</p>
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => navigate('/did-you-know')}
+                className="font-semibold"
+                style={{ fontSize: 12, color: 'var(--color-knowledge)' }}
+              >
+                עוד עובדות ←
+              </button>
+              <p style={{ fontSize: 11, color: '#333' }}>{rich.fact.source}</p>
+            </div>
+          </div>
         </>
       ) : (
         <>

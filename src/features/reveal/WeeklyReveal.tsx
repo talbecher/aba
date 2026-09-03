@@ -140,18 +140,22 @@ function WeeklyReveal() {
           </div>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 py-10 text-center">
-            <p
-              style={{
-                fontSize: 11,
-                color: '#444',
-                textTransform: 'uppercase',
-                letterSpacing: '0.2em',
-              }}
-            >
-              שבוע {week}
+            <svg viewBox="0 0 120 140" width="120" height="140">
+              <path
+                d="M60 10 C30 10 8 40 8 75 C8 115 28 132 60 132
+                   C92 132 112 115 112 75 C112 40 90 10 60 10 Z"
+                fill="#1a1208"
+                stroke="#F59E0B"
+                strokeWidth="1.5"
+              />
+              <circle cx="60" cy="78" r="18" fill="#F59E0B" opacity=".08" />
+              <circle cx="60" cy="78" r="6" fill="#F59E0B" opacity=".25" />
+            </svg>
+            <p style={{ fontSize: 24, fontWeight: 900, color: '#fff' }}>
+              הבחור גדל.
             </p>
-            <p style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>
-              רוצה לראות מה הגודל של הבוטן השבוע?
+            <p style={{ fontSize: 14, color: '#666' }}>
+              נראה למה הוא דומה השבוע.
             </p>
             <button
               type="button"
@@ -160,8 +164,7 @@ function WeeklyReveal() {
                 backgroundColor: '#F59E0B',
                 color: '#0A0A0A',
                 fontWeight: 900,
-                fontSize: 17,
-                padding: '18px 48px',
+                padding: '14px 32px',
                 borderRadius: 50,
                 minHeight: 44,
               }}
@@ -328,11 +331,11 @@ function WeeklyReveal() {
           <div className="flex items-center justify-between">
             <button
               type="button"
-              onClick={() => setPhase('reveal')}
+              onClick={() => setPhase('teaser')}
               aria-label="חזרה"
               style={{ fontSize: 12, color: '#555', minHeight: 44 }}
             >
-              ← חזרה
+              → חזרה
             </button>
             <p style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>
               האוסף שלך
@@ -424,7 +427,7 @@ function WeeklyReveal() {
               aria-label="חזרה"
               style={{ fontSize: 12, color: '#555', minHeight: 44 }}
             >
-              ← חזרה
+              → חזרה
             </button>
             <div className="flex flex-col items-center gap-1">
               <p style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>
@@ -585,7 +588,7 @@ function WeeklyReveal() {
             className="self-start"
             style={{ fontSize: 12, color: '#555', minHeight: 44 }}
           >
-            ← חזרה
+            → חזרה
           </button>
 
           <div

@@ -29,7 +29,7 @@ function DictionaryScreen() {
           style={{ minHeight: 44, minWidth: 44 }}
           className="text-xl text-[var(--text-secondary)]"
         >
-          ←
+          →
         </button>
         <h1 className="text-lg font-bold">🔍 מילון</h1>
       </header>

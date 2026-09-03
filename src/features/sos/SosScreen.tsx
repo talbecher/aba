@@ -30,7 +30,7 @@ function SosScreen() {
           style={{ minHeight: 44, minWidth: 44 }}
           className="text-xl text-[var(--text-secondary)]"
         >
-          ←
+          →
         </button>
         <div className="flex flex-col">
           <h1 className="text-lg font-bold">משהו לא מרגיש תקין?</h1>

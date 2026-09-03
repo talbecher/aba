@@ -310,47 +310,17 @@ function HomeScreen() {
 
         {currentTask && !allTasksDone && (
           <>
-            <p
-              className="font-bold"
-              style={{
-                fontSize: 15,
-                lineHeight: 1.3,
-                color: completedTasks.includes(currentTask.id)
-                  ? 'var(--text-secondary)'
-                  : 'var(--text)',
-                textDecoration: completedTasks.includes(currentTask.id)
-                  ? 'line-through'
-                  : 'none',
-              }}
-            >
-              {currentTask.title}
-            </p>
-            <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6, marginTop: 8 }}>
-              {currentTask.description}
-            </p>
-
-            <div className="mt-3 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  const willBeDone = !completedTasks.includes(currentTask.id)
-                  toggleCompletedTask(currentTask.id)
-                  if (willBeDone) navigator.vibrate?.([30])
-                }}
-                aria-pressed={completedTasks.includes(currentTask.id)}
-                style={{
-                  minHeight: 44,
-                  backgroundColor: completedTasks.includes(currentTask.id)
-                    ? 'var(--color-success)'
-                    : 'transparent',
-                  border: `1px solid ${completedTasks.includes(currentTask.id) ? 'var(--color-success)' : 'var(--border)'}`,
-                  color: completedTasks.includes(currentTask.id) ? '#0A0A0A' : 'var(--text)',
-                }}
-                className="flex-1 rounded-xl text-sm font-semibold"
-              >
-                סיימתי ✅
-              </button>
-              {relevantTasks.length > 1 && (
+            {relevantTasks.length > 1 && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTaskIndex((i) => Math.max(0, i - 1))}
+                  disabled={safeTaskIndex === 0}
+                  style={{ minHeight: 44 }}
+                  className="flex-1 rounded-xl border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)] disabled:opacity-30"
+                >
+                  → הקודמת
+                </button>
                 <button
                   type="button"
                   onClick={() =>
@@ -360,10 +330,43 @@ function HomeScreen() {
                   style={{ minHeight: 44 }}
                   className="flex-1 rounded-xl border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)] disabled:opacity-30"
                 >
-                  הבאה →
+                  הבאה ←
                 </button>
-              )}
+              </div>
+            )}
+
+            <div
+              className="rounded-xl p-3"
+              style={{ marginTop: relevantTasks.length > 1 ? 12 : 0, backgroundColor: 'var(--bg-elevated)' }}
+            >
+              <p className="font-bold" style={{ fontSize: 15, lineHeight: 1.3, color: 'var(--text)' }}>
+                {currentTask.title}
+              </p>
+              <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6, marginTop: 8 }}>
+                {currentTask.description}
+              </p>
             </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (completedTasks.includes(currentTask.id)) return
+                toggleCompletedTask(currentTask.id)
+                navigator.vibrate?.([30])
+              }}
+              disabled={completedTasks.includes(currentTask.id)}
+              style={{
+                minHeight: 44,
+                marginTop: 12,
+                width: '100%',
+                backgroundColor: completedTasks.includes(currentTask.id) ? '#10B981' : 'transparent',
+                border: `1px solid ${completedTasks.includes(currentTask.id) ? '#10B981' : '#333'}`,
+                color: completedTasks.includes(currentTask.id) ? '#fff' : '#888',
+              }}
+              className="rounded-xl text-sm font-semibold"
+            >
+              {completedTasks.includes(currentTask.id) ? 'בוצע ✓' : 'סיימתי'}
+            </button>
           </>
         )}
 

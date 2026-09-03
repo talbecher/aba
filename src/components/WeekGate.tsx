@@ -86,7 +86,7 @@ function WeekGate({ children }: WeekGateProps) {
             onClick={() => setMode('week')}
             className="text-sm text-[var(--text-secondary)]"
           >
-            ← חזרה לבחירת שבוע
+            → חזרה לבחירת שבוע
           </button>
         </>
       )}
