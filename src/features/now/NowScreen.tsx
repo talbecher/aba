@@ -170,7 +170,7 @@ function NowScreen() {
                 className="font-semibold"
                 style={{ fontSize: 12, color: 'var(--color-knowledge)' }}
               >
-                עוד עובדות ←
+                עוד עובדות →
               </button>
               <p style={{ fontSize: 11, color: '#333' }}>{rich.fact.source}</p>
             </div>

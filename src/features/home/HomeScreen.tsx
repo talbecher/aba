@@ -46,6 +46,7 @@ function HomeScreen() {
     () => tasks.filter((t) => t.week_start <= week && week <= t.week_end),
     [week],
   )
+  const completedThisWeek = relevantTasks.filter((t) => completedTasks.includes(t.id))
   const allTasksDone =
     relevantTasks.length > 0 &&
     relevantTasks.every((t) => completedTasks.includes(t.id))
@@ -308,41 +309,41 @@ function HomeScreen() {
       >
         <h2 className="mb-3 text-sm font-semibold">המשימות שלך השבוע 🎯</h2>
 
+        {/* Progress bar */}
+        <div
+          className="h-[3px] w-full overflow-hidden rounded-full"
+          style={{ backgroundColor: '#1E1E1E' }}
+        >
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${completedThisWeek.length && relevantTasks.length ? Math.round((completedThisWeek.length / relevantTasks.length) * 100) : 0}%`,
+              backgroundColor: '#10B981',
+            }}
+          />
+        </div>
+        <p className="mt-1" style={{ fontSize: 11, color: '#555' }}>
+          {completedThisWeek.length} מתוך {relevantTasks.length} משימות השבוע
+        </p>
+
         {currentTask && !allTasksDone && (
           <>
-            {relevantTasks.length > 1 && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setTaskIndex((i) => Math.max(0, i - 1))}
-                  disabled={safeTaskIndex === 0}
-                  style={{ minHeight: 44 }}
-                  className="flex-1 rounded-xl border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)] disabled:opacity-30"
-                >
-                  → הקודמת
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setTaskIndex((i) => Math.min(relevantTasks.length - 1, i + 1))
-                  }
-                  disabled={safeTaskIndex === relevantTasks.length - 1}
-                  style={{ minHeight: 44 }}
-                  className="flex-1 rounded-xl border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)] disabled:opacity-30"
-                >
-                  הבאה ←
-                </button>
-              </div>
-            )}
-
             <div
-              className="rounded-xl p-3"
-              style={{ marginTop: relevantTasks.length > 1 ? 12 : 0, backgroundColor: 'var(--bg-elevated)' }}
+              className="mt-3 rounded-xl p-3"
+              style={{ backgroundColor: 'var(--bg-elevated)' }}
             >
-              <p className="font-bold" style={{ fontSize: 15, lineHeight: 1.3, color: 'var(--text)' }}>
+              <p
+                className="font-bold"
+                style={{
+                  fontSize: 15,
+                  lineHeight: 1.3,
+                  color: completedTasks.includes(currentTask.id) ? '#555' : 'var(--text)',
+                  textDecoration: completedTasks.includes(currentTask.id) ? 'line-through' : 'none',
+                }}
+              >
                 {currentTask.title}
               </p>
-              <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6, marginTop: 8 }}>
+              <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6, marginTop: 8 }}>
                 {currentTask.description}
               </p>
             </div>
@@ -350,11 +351,11 @@ function HomeScreen() {
             <button
               type="button"
               onClick={() => {
-                if (completedTasks.includes(currentTask.id)) return
+                const willBeDone = !completedTasks.includes(currentTask.id)
                 toggleCompletedTask(currentTask.id)
-                navigator.vibrate?.([30])
+                if (willBeDone) navigator.vibrate?.([30])
               }}
-              disabled={completedTasks.includes(currentTask.id)}
+              aria-pressed={completedTasks.includes(currentTask.id)}
               style={{
                 minHeight: 44,
                 marginTop: 12,
@@ -365,13 +366,38 @@ function HomeScreen() {
               }}
               className="rounded-xl text-sm font-semibold"
             >
-              {completedTasks.includes(currentTask.id) ? 'בוצע ✓' : 'סיימתי'}
+              {completedTasks.includes(currentTask.id) ? 'בוצע ✓ — בטל' : 'סיימתי ✓'}
             </button>
+
+            {relevantTasks.length > 1 && (
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTaskIndex((i) => Math.max(0, i - 1))}
+                  disabled={safeTaskIndex === 0}
+                  style={{ minHeight: 36, borderColor: '#333' }}
+                  className="flex-1 rounded-xl border text-xs font-semibold text-[var(--text-secondary)] disabled:opacity-30"
+                >
+                  → הקודמת
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTaskIndex((i) => Math.min(relevantTasks.length - 1, i + 1))
+                  }
+                  disabled={safeTaskIndex === relevantTasks.length - 1}
+                  style={{ minHeight: 36, borderColor: '#333' }}
+                  className="flex-1 rounded-xl border text-xs font-semibold text-[var(--text-secondary)] disabled:opacity-30"
+                >
+                  הבאה ←
+                </button>
+              </div>
+            )}
           </>
         )}
 
         {allTasksDone && (
-          <div className="flex flex-col items-center gap-2 py-2 text-center">
+          <div className="mt-3 flex flex-col items-center gap-2 py-2 text-center">
             <p style={{ fontSize: 16, fontWeight: 700 }}>
               כל המשימות השבוע מסומנות ✅
             </p>

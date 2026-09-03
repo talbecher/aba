@@ -46,6 +46,7 @@ function WeeklyReveal() {
   const [collectionView, setCollectionView] = useState<CollectionView>('summary')
   const [tileWeek, setTileWeek] = useState<number | null>(null)
   const [showAR, setShowAR] = useState(false)
+  const [showTileAR, setShowTileAR] = useState(false)
 
   useEffect(() => {
     setPhase('teaser')
@@ -130,12 +131,12 @@ function WeeklyReveal() {
                 style={{ minHeight: 44, borderColor: '#222', color: '#666' }}
                 className="flex-1 rounded-xl border text-sm font-semibold"
               >
-                האוסף שלי →
+                האוסף שלי ←
               </button>
             </div>
 
             <p style={{ fontSize: 12, color: '#444', textAlign: 'center', marginTop: 8 }}>
-              השבוע הבא: השוואה הזויה אחרת.
+              השבוע הבא: השוואה מוזרה אחרת.
             </p>
           </div>
         ) : (
@@ -304,7 +305,7 @@ function WeeklyReveal() {
                   style={{ minHeight: 44, borderColor: '#222', color: '#666' }}
                   className="flex-1 rounded-xl border font-semibold"
                 >
-                  האוסף שלי →
+                  האוסף שלי ←
                 </button>
               </div>
             )}
@@ -543,7 +544,20 @@ function WeeklyReveal() {
             <p style={{ fontSize: 13, color: '#F59E0B', fontWeight: 700 }}>
               {revealData[tileWeek].size} · {revealData[tileWeek].weight}
             </p>
-            <div className="mt-3 flex w-full gap-2">
+            <button
+              type="button"
+              onClick={() => setShowTileAR(true)}
+              style={{
+                minHeight: 44,
+                border: '1px solid #F59E0B33',
+                color: '#F59E0B',
+              }}
+              className="mt-3 w-full rounded-xl text-sm font-semibold"
+            >
+              📷 השווה על המצלמה
+            </button>
+
+            <div className="mt-2 flex w-full gap-2">
               <a
                 href={whatsappHrefFor(tileWeek)}
                 target="_blank"
@@ -564,6 +578,17 @@ function WeeklyReveal() {
             </div>
           </div>
         </div>
+      )}
+
+      {showTileAR && tileWeek !== null && (
+        <ARCamera
+          week={tileWeek}
+          name={revealData[tileWeek].name}
+          size_cm={revealData[tileWeek].size_cm}
+          weight={revealData[tileWeek].weight}
+          punch={revealData[tileWeek].punch}
+          onClose={() => setShowTileAR(false)}
+        />
       )}
 
       {showAR && (
