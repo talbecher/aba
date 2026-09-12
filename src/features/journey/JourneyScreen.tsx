@@ -183,7 +183,7 @@ function JourneyScreen() {
 
           return (
             <button
-              key={event.week}
+              key={`${event.week}-${event.title}`}
               type="button"
               onClick={() => setSelected(event)}
               className="relative flex items-start gap-3 text-right"
