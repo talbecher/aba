@@ -14,10 +14,8 @@ export function getDueWeek(
   if (dueDate) {
     const due = new Date(dueDate)
     if (!Number.isNaN(due.getTime())) {
-      const weeksUntilDue = Math.floor(
-        (due.getTime() - Date.now()) / MS_PER_WEEK,
-      )
-      return clampWeek(TOTAL_WEEKS - weeksUntilDue)
+      const weeksUntilDue = (due.getTime() - Date.now()) / MS_PER_WEEK
+      return clampWeek(Math.floor(TOTAL_WEEKS - weeksUntilDue))
     }
   }
 
