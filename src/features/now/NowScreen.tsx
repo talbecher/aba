@@ -15,6 +15,7 @@ function NowScreen() {
   const week = useCurrentWeek()
   const dueDate = useUserStore((state) => state.due_date)
   const setDueDate = useUserStore((state) => state.setDueDate)
+  const setManualWeekOverride = useUserStore((state) => state.setManualWeekOverride)
   const { csv, data } = useWeekContent(week)
   const rich = nowContent[week] ?? null
 
@@ -30,7 +31,10 @@ function NowScreen() {
   }, [week])
 
   const handleSaveDueDate = () => {
-    if (dueDateInput) setDueDate(dueDateInput)
+    if (dueDateInput) {
+      setDueDate(dueDateInput)
+      setManualWeekOverride(null)
+    }
     setSettingsOpen(false)
   }
 

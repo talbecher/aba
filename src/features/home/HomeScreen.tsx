@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCurrentWeek } from '../../hooks/useCurrentWeek'
+import { getDueWeek } from '../../lib/week'
 import { useJourneyPreview } from '../../hooks/useJourneyPreview'
 import { useUserStore } from '../../store/useUserStore'
 import { openGoogleCalendarEvent } from '../../lib/calendar'
@@ -33,8 +34,10 @@ function HomeScreen() {
   const { next } = useJourneyPreview()
 
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsMode, setSettingsMode] = useState<'date' | 'week'>(dueDate ? 'date' : 'week')
   const [dueDateInput, setDueDateInput] = useState(dueDate ?? '')
   const [weekSlider, setWeekSlider] = useState(manualWeekOverride ?? week)
+  const dueDateInputWeek = dueDateInput ? getDueWeek(dueDateInput, null) : null
   const [prepOpen, setPrepOpen] = useState(false)
   const [taskIndex, setTaskIndex] = useState(0)
 
@@ -61,10 +64,13 @@ function HomeScreen() {
   }, [week])
 
   const handleSaveWeek = () => {
-    if (dueDateInput) {
+    if (settingsMode === 'date') {
+      if (!dueDateInput) return
       setDueDate(dueDateInput)
+      setManualWeekOverride(null)
     } else {
       setManualWeekOverride(weekSlider)
+      setDueDate(null)
     }
     setSettingsOpen(false)
   }
@@ -106,6 +112,7 @@ function HomeScreen() {
               onClick={() => {
                 setDueDateInput(dueDate ?? '')
                 setWeekSlider(manualWeekOverride ?? week)
+                setSettingsMode(dueDate ? 'date' : 'week')
                 setSettingsOpen(true)
               }}
               aria-label="עדכן שבוע"
@@ -161,46 +168,69 @@ function HomeScreen() {
           <h2 className="text-lg font-bold">עדכן שבוע</h2>
           <p className="text-sm text-neutral-400">השבוע הנוכחי: {week}</p>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold">תאריך לידה משוער</label>
-            <input
-              type="date"
-              value={dueDateInput}
-              onChange={(e) => setDueDateInput(e.target.value)}
-              className="w-full rounded-xl border border-neutral-700 bg-neutral-950 p-3 text-neutral-100 focus:border-accent focus:outline-none"
-            />
-            {dueDateInput && (
-              <button
-                type="button"
-                onClick={() => setDueDateInput('')}
-                className="self-start text-xs text-neutral-500"
-              >
-                נקה תאריך
-              </button>
-            )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setSettingsMode('date')}
+              style={{ minHeight: 44 }}
+              className={`flex-1 rounded-xl border p-3 text-sm font-semibold ${
+                settingsMode === 'date'
+                  ? 'border-accent text-accent'
+                  : 'border-neutral-700 text-neutral-400'
+              }`}
+            >
+              {settingsMode === 'date' ? '◉' : '○'} תאריך לידה משוער
+            </button>
+            <button
+              type="button"
+              onClick={() => setSettingsMode('week')}
+              style={{ minHeight: 44 }}
+              className={`flex-1 rounded-xl border p-3 text-sm font-semibold ${
+                settingsMode === 'week'
+                  ? 'border-accent text-accent'
+                  : 'border-neutral-700 text-neutral-400'
+              }`}
+            >
+              {settingsMode === 'week' ? '◉' : '○'} אני יודע את השבוע
+            </button>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold">בחר שבוע ידנית</label>
-            <div className="text-center text-lg font-semibold text-accent">
-              שבוע {weekSlider}
+          {settingsMode === 'date' ? (
+            <div className="flex flex-col gap-2">
+              <input
+                type="date"
+                value={dueDateInput}
+                onChange={(e) => setDueDateInput(e.target.value)}
+                className="w-full rounded-xl border border-neutral-700 bg-neutral-950 p-3 text-neutral-100 focus:border-accent focus:outline-none"
+              />
+              {dueDateInputWeek !== null && (
+                <p className="text-sm text-neutral-400">
+                  לפי התאריך — שבוע {dueDateInputWeek}
+                </p>
+              )}
             </div>
-            <input
-              type="range"
-              min={1}
-              max={40}
-              value={weekSlider}
-              onChange={(e) => setWeekSlider(Number(e.target.value))}
-              disabled={!!dueDateInput}
-              className="w-full accent-accent disabled:opacity-40"
-            />
-          </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <div className="text-center text-lg font-semibold text-accent">
+                שבוע {weekSlider}
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={40}
+                value={weekSlider}
+                onChange={(e) => setWeekSlider(Number(e.target.value))}
+                className="w-full accent-accent"
+              />
+            </div>
+          )}
 
           <button
             type="button"
             onClick={handleSaveWeek}
+            disabled={settingsMode === 'date' && !dueDateInput}
             style={{ minHeight: 44 }}
-            className="w-full rounded-xl bg-accent p-3 font-semibold text-neutral-950"
+            className="w-full rounded-xl bg-accent p-3 font-semibold text-neutral-950 disabled:opacity-40"
           >
             שמור
           </button>

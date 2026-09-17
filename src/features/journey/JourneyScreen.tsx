@@ -51,6 +51,7 @@ function JourneyScreen() {
   const dueDate = useUserStore((state) => state.due_date)
   const manualWeekOverride = useUserStore((state) => state.manual_week_override)
   const setDueDate = useUserStore((state) => state.setDueDate)
+  const setManualWeekOverride = useUserStore((state) => state.setManualWeekOverride)
   const plannedEvents = useUserStore((state) => state.plannedEvents)
   const addPlannedEvent = useUserStore((state) => state.addPlannedEvent)
 
@@ -88,7 +89,10 @@ function JourneyScreen() {
       : journeyEvents.filter((event) => event.type === filter)
 
   const handleSaveDueDate = () => {
-    if (dueDateInput) setDueDate(dueDateInput)
+    if (dueDateInput) {
+      setDueDate(dueDateInput)
+      setManualWeekOverride(null)
+    }
     setSettingsOpen(false)
   }
 

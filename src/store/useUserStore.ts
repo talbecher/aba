@@ -4,7 +4,7 @@ import type { Tone, UserState } from '../types/user'
 
 interface UserStore extends UserState {
   setTone: (tone: Tone) => void
-  setDueDate: (date: string) => void
+  setDueDate: (date: string | null) => void
   setManualWeekOverride: (week: number | null) => void
   setIsFirstBaby: (val: boolean) => void
   toggleAction: (id: string) => void
