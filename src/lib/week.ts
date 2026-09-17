@@ -40,6 +40,12 @@ export function getEstimatedDueDate(
   return new Date(Date.now() + weeksRemaining * MS_PER_WEEK)
 }
 
+export function getWeekAtDate(targetDate: Date, dueDate: Date): number {
+  const weeksLeftAtTarget = (dueDate.getTime() - targetDate.getTime()) / MS_PER_WEEK
+  const week = Math.round(TOTAL_WEEKS - weeksLeftAtTarget)
+  return clampWeek(week)
+}
+
 export function calculateEddFromConception(conceptionMonth: string): string {
   const [year, month] = conceptionMonth.split('-').map(Number)
   const conceptionDate = new Date(year, month - 1, 1)

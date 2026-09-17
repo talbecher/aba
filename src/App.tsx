@@ -6,6 +6,7 @@ import ForDadScreen from './features/fordad/ForDadScreen'
 import DidYouKnowScreen from './features/didyouknow/DidYouKnowScreen'
 import TimelineScreen from './features/timeline/TimelineScreen'
 import JourneyScreen from './features/journey/JourneyScreen'
+import FuturePlanner from './features/planner/FuturePlanner'
 import SosScreen from './features/sos/SosScreen'
 import DictionaryScreen from './features/dictionary/DictionaryScreen'
 import BottomNav from './components/BottomNav'
@@ -33,6 +34,7 @@ function App() {
         <Route path="/did-you-know" element={<DidYouKnowScreen />} />
         <Route path="/timeline" element={<TimelineScreen />} />
         <Route path="/journey" element={<JourneyScreen />} />
+        <Route path="/planner" element={<FuturePlanner />} />
       </Route>
     </Routes>
   )

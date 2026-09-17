@@ -37,9 +37,19 @@ function NowScreen() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[390px] flex-col gap-4 bg-[var(--bg)] px-5 pb-24 pt-5 text-[var(--text)]">
       <header className="flex flex-col gap-2">
-        <p className="text-[13px] text-[var(--text-secondary)]">
-          שבוע {week} מתוך {TOTAL_WEEKS}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-[13px] text-[var(--text-secondary)]">
+            שבוע {week} מתוך {TOTAL_WEEKS}
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/planner')}
+            style={{ minHeight: 44 }}
+            className="px-2 text-xs text-[var(--text-secondary)]"
+          >
+            📅 מה יהיה אז?
+          </button>
+        </div>
         <p style={{ fontSize: 12, color: '#555' }}>נותרו {remainingWeeks} שבועות</p>
         <div
           className="h-[3px] w-full overflow-hidden rounded-full"

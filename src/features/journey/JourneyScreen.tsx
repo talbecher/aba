@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCurrentWeek } from '../../hooks/useCurrentWeek'
 import { useUserStore } from '../../store/useUserStore'
 import { getEstimatedDueDate } from '../../lib/week'
@@ -45,6 +46,7 @@ function formatShortDate(date: Date): string {
 type EventStatus = 'past' | 'current' | 'next' | 'future'
 
 function JourneyScreen() {
+  const navigate = useNavigate()
   const week = useCurrentWeek()
   const dueDate = useUserStore((state) => state.due_date)
   const manualWeekOverride = useUserStore((state) => state.manual_week_override)
@@ -104,18 +106,28 @@ function JourneyScreen() {
       <header className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-black">🗂️ יומן המסע שלכם</h1>
-          <button
-            type="button"
-            onClick={() => {
-              setDueDateInput(dueDate ?? '')
-              setSettingsOpen(true)
-            }}
-            aria-label="ערוך תאריך לידה"
-            style={{ minHeight: 44 }}
-            className="px-2 text-xs text-[var(--text-secondary)]"
-          >
-            ערוך תאריך ⚙️
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => navigate('/planner')}
+              style={{ minHeight: 44 }}
+              className="px-2 text-xs text-[var(--text-secondary)]"
+            >
+              📅 מה יהיה אז?
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDueDateInput(dueDate ?? '')
+                setSettingsOpen(true)
+              }}
+              aria-label="ערוך תאריך לידה"
+              style={{ minHeight: 44 }}
+              className="px-2 text-xs text-[var(--text-secondary)]"
+            >
+              ערוך תאריך ⚙️
+            </button>
+          </div>
         </div>
         <p className="text-sm text-[var(--text-secondary)]">
           שבוע {week} · טרימסטר {trimester}
