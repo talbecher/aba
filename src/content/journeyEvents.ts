@@ -383,9 +383,8 @@ export function eventId(event: JourneyEvent): string {
 
 export function buildCalendarDescription(event: JourneyEvent): string {
   return [
-    event.desc || event.title,
     `שבוע הריון: ${event.week}`,
-    'להביא: הפניה, מסמכים רלוונטיים',
-    'Aba',
+    'להביא: הפניה, מסמכים',
+    'Aba 🥜',
   ].join('\n')
 }

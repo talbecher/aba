@@ -15,7 +15,6 @@ import {
 import BottomSheet from '../../components/BottomSheet'
 import PreparationDetail from '../../components/PreparationDetail'
 import AppointmentEditor from '../../components/AppointmentEditor'
-import AppointmentStatusBadge from '../../components/AppointmentStatusBadge'
 
 type Filter = 'all' | 'check' | 'task' | 'milestone'
 
@@ -209,6 +208,11 @@ function JourneyScreen() {
             ? formatShortDate(eventDate(estimatedDueDate, event.week))
             : `שבוע ${event.week}`
           const isPlanned = plannedEvents.includes(String(event.week))
+          const isActionable = event.type !== 'milestone'
+          const appt = appointments[eventId(event)]
+          const apptStatus = isActionable
+            ? getAppointmentStatus(eventDate(estimatedDueDate, event.week), appt)
+            : null
 
           return (
             <button
@@ -240,9 +244,36 @@ function JourneyScreen() {
 
               <div className="flex flex-1 flex-col gap-1 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-[var(--text-secondary)]">
-                    {dateLabel}
-                  </span>
+                  {isActionable ? (
+                    apptStatus === 'done' ? (
+                      <span
+                        className="w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                        style={{ backgroundColor: 'rgba(16,185,129,0.12)', color: 'var(--color-success)' }}
+                      >
+                        בוצע ✓
+                      </span>
+                    ) : appt ? (
+                      <span
+                        className="w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                        style={{ backgroundColor: 'rgba(16,185,129,0.12)', color: 'var(--color-success)' }}
+                      >
+                        נקבע ✓
+                      </span>
+                    ) : apptStatus === 'to_schedule' ? (
+                      <span
+                        className="w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                        style={{ backgroundColor: 'rgba(249,115,22,0.12)', color: '#f97316' }}
+                      >
+                        צריך לקבוע
+                      </span>
+                    ) : (
+                      <span />
+                    )
+                  ) : (
+                    <span className="text-[11px] text-[var(--text-secondary)]">
+                      {dateLabel}
+                    </span>
+                  )}
                   <span
                     className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
                     style={{
@@ -286,19 +317,31 @@ function JourneyScreen() {
                         : `בעוד ${daysUntilFor(event)} ימים`}
                   </p>
                 )}
-                {event.desc && (
-                  <p className="text-xs text-[var(--text-secondary)]">
-                    {event.desc}
-                  </p>
-                )}
-                {event.type !== 'milestone' && (
-                  <AppointmentStatusBadge
-                    status={getAppointmentStatus(
-                      eventDate(estimatedDueDate, event.week),
-                      appointments[eventId(event)],
-                    )}
-                    appointment={appointments[eventId(event)]}
-                  />
+                {isActionable ? (
+                  appt ? (
+                    <>
+                      <p className="text-sm font-semibold" style={{ color: '#F59E0B' }}>
+                        📅 {formatFullDate(new Date(`${appt.date}T00:00:00`))} · {appt.time}
+                      </p>
+                      {appt.location && (
+                        <p className="text-xs" style={{ color: '#888' }}>
+                          📍 {appt.location}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    event.preparation?.window && (
+                      <p className="text-xs" style={{ color: '#555' }}>
+                        חלון: {event.preparation.window}
+                      </p>
+                    )
+                  )
+                ) : (
+                  event.desc && (
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      {event.desc}
+                    </p>
+                  )
                 )}
                 {isPlanned && (
                   <span className="text-[11px]" style={{ color: 'var(--color-success)' }}>
