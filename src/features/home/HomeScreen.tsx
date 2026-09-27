@@ -6,9 +6,25 @@ import { useJourneyPreview } from '../../hooks/useJourneyPreview'
 import { useUserStore } from '../../store/useUserStore'
 import { openGoogleCalendarEvent } from '../../lib/calendar'
 import { tasks } from '../../content/tasks'
+import {
+  journeyEvents,
+  eventId,
+  buildCalendarDescription,
+  type JourneyEvent,
+} from '../../content/journeyEvents'
+import type { Appointment } from '../../types/user'
 import BottomSheet from '../../components/BottomSheet'
 import PreparationDetail from '../../components/PreparationDetail'
 import WeeklyReveal from '../reveal/WeeklyReveal'
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000
+
+function formatFullDate(date: Date): string {
+  const d = String(date.getDate()).padStart(2, '0')
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const y = date.getFullYear()
+  return `${d}.${m}.${y}`
+}
 
 const TOTAL_WEEKS = 40
 
@@ -30,8 +46,24 @@ function HomeScreen() {
   const completedTasks = useUserStore((state) => state.completedTasks)
   const toggleCompletedTask = useUserStore((state) => state.toggleCompletedTask)
   const addPlannedEvent = useUserStore((state) => state.addPlannedEvent)
+  const appointments = useUserStore((state) => state.appointments)
   const showManualWeekNotice = !dueDate && manualWeekOverride !== null
   const { next } = useJourneyPreview()
+
+  const nextAppointment = useMemo(() => {
+    const now = Date.now()
+    type ScheduledEntry = { event: JourneyEvent; appt: Appointment; date: Date }
+    const upcoming: ScheduledEntry[] = []
+    for (const event of journeyEvents) {
+      const appt = appointments[eventId(event)]
+      if (!appt || appt.status !== 'scheduled') continue
+      const date = new Date(`${appt.date}T${appt.time || '00:00'}`)
+      if (date.getTime() < now) continue
+      upcoming.push({ event, appt, date })
+    }
+    upcoming.sort((a, b) => a.date.getTime() - b.date.getTime())
+    return upcoming[0] ?? null
+  }, [appointments])
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsMode, setSettingsMode] = useState<'date' | 'week'>(dueDate ? 'date' : 'week')
@@ -92,6 +124,24 @@ function HomeScreen() {
       navigate('/journey')
     }
   }
+
+  const [appointmentPrepOpen, setAppointmentPrepOpen] = useState(false)
+
+  const handleAppointmentAddToCalendar = () => {
+    if (!nextAppointment) return
+    openGoogleCalendarEvent({
+      title: nextAppointment.event.title,
+      date: new Date(`${nextAppointment.appt.date}T00:00:00`),
+      time: nextAppointment.appt.time,
+      location: nextAppointment.appt.location,
+      description: buildCalendarDescription(nextAppointment.event),
+    })
+    addPlannedEvent(String(nextAppointment.event.week))
+  }
+
+  const appointmentDaysUntil = nextAppointment
+    ? Math.ceil((nextAppointment.date.getTime() - Date.now()) / MS_PER_DAY)
+    : 0
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[390px] flex-col gap-4 bg-[var(--bg)] pb-24 text-[var(--text)]">
@@ -249,13 +299,72 @@ function HomeScreen() {
         </BottomSheet>
       )}
 
+      {nextAppointment?.event.preparation && (
+        <BottomSheet open={appointmentPrepOpen} onClose={() => setAppointmentPrepOpen(false)}>
+          <PreparationDetail
+            title={nextAppointment.event.title}
+            badge={nextAppointment.event.badge}
+            preparation={nextAppointment.event.preparation}
+            onAddToCalendar={handleAppointmentAddToCalendar}
+            onClose={() => setAppointmentPrepOpen(false)}
+          />
+        </BottomSheet>
+      )}
+
       <WeeklyReveal />
 
       <section
         className="mx-5 rounded-2xl p-4"
         style={{ border: '1px solid #3B82F644', backgroundColor: '#0d1117' }}
       >
-        {next ? (
+        {nextAppointment ? (
+          <>
+            <div className="mb-2 flex items-center justify-between">
+              <h2
+                className="text-sm font-semibold"
+                style={{ color: 'var(--color-info)' }}
+              >
+                📍 באופק
+              </h2>
+              <span
+                className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                style={{
+                  backgroundColor: 'rgba(59,130,246,0.12)',
+                  color: 'var(--color-info)',
+                }}
+              >
+                {nextAppointment.event.badge}
+              </span>
+            </div>
+            <p style={{ fontSize: 12, color: '#888' }}>
+              {appointmentDaysUntil === 0
+                ? 'היום'
+                : appointmentDaysUntil === 1
+                  ? 'מחר'
+                  : `בעוד ${appointmentDaysUntil} ימים`}
+            </p>
+            <p className="mt-1" style={{ fontSize: 18, fontWeight: 700 }}>
+              הבא שלכם: {nextAppointment.event.title}
+            </p>
+            <p className="mt-1" style={{ fontSize: 14, color: '#888' }}>
+              📅 {formatFullDate(nextAppointment.date)} · {nextAppointment.appt.time}
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setAppointmentPrepOpen(true)}
+                style={{
+                  minHeight: 44,
+                  backgroundColor: 'var(--color-info)',
+                  color: '#0A0A0A',
+                }}
+                className="flex-1 rounded-xl text-sm font-semibold"
+              >
+                מה צריך לדעת לפני?
+              </button>
+            </div>
+          </>
+        ) : next ? (
           <>
             <div className="mb-2 flex items-center justify-between">
               <h2

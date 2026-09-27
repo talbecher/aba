@@ -14,6 +14,12 @@ interface UserStore extends UserState {
   toggleCompletedTask: (id: string) => void
   addPlannedEvent: (id: string) => void
   setCurrentTaskIndex: (index: number) => void
+  setAppointment: (
+    eventId: string,
+    data: { date: string; time: string; location: string },
+  ) => void
+  markDone: (eventId: string) => void
+  removeAppointment: (eventId: string) => void
 }
 
 const initialState: UserState = {
@@ -28,6 +34,7 @@ const initialState: UserState = {
   completedTasks: [],
   plannedEvents: [],
   currentTaskIndex: 0,
+  appointments: {},
 }
 
 export const useUserStore = create<UserStore>()(
@@ -67,6 +74,30 @@ export const useUserStore = create<UserStore>()(
             : { plannedEvents: [...state.plannedEvents, id] },
         ),
       setCurrentTaskIndex: (index) => set({ currentTaskIndex: index }),
+      setAppointment: (eventId, data) =>
+        set((state) => ({
+          appointments: {
+            ...state.appointments,
+            [eventId]: { ...data, status: 'scheduled' },
+          },
+        })),
+      markDone: (eventId) =>
+        set((state) => {
+          const existing = state.appointments[eventId]
+          if (!existing) return state
+          return {
+            appointments: {
+              ...state.appointments,
+              [eventId]: { ...existing, status: 'done' },
+            },
+          }
+        }),
+      removeAppointment: (eventId) =>
+        set((state) => {
+          const appointments = { ...state.appointments }
+          delete appointments[eventId]
+          return { appointments }
+        }),
     }),
     { name: 'aba-user-store' },
   ),

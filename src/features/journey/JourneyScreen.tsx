@@ -4,13 +4,18 @@ import { useCurrentWeek } from '../../hooks/useCurrentWeek'
 import { useUserStore } from '../../store/useUserStore'
 import { getEstimatedDueDate } from '../../lib/week'
 import { openGoogleCalendarEvent, DISCLAIMER } from '../../lib/calendar'
+import { getAppointmentStatus } from '../../lib/eventStatus'
 import {
   journeyEvents,
   eventDate,
+  eventId,
+  buildCalendarDescription,
   type JourneyEvent,
 } from '../../content/journeyEvents'
 import BottomSheet from '../../components/BottomSheet'
 import PreparationDetail from '../../components/PreparationDetail'
+import AppointmentEditor from '../../components/AppointmentEditor'
+import AppointmentStatusBadge from '../../components/AppointmentStatusBadge'
 
 type Filter = 'all' | 'check' | 'task' | 'milestone'
 
@@ -54,6 +59,9 @@ function JourneyScreen() {
   const setManualWeekOverride = useUserStore((state) => state.setManualWeekOverride)
   const plannedEvents = useUserStore((state) => state.plannedEvents)
   const addPlannedEvent = useUserStore((state) => state.addPlannedEvent)
+  const appointments = useUserStore((state) => state.appointments)
+  const setAppointment = useUserStore((state) => state.setAppointment)
+  const markDone = useUserStore((state) => state.markDone)
 
   const [filter, setFilter] = useState<Filter>('all')
   const [selected, setSelected] = useState<JourneyEvent | null>(null)
@@ -97,10 +105,15 @@ function JourneyScreen() {
   }
 
   const handleAddToCalendar = (event: JourneyEvent) => {
+    const appointment = appointments[eventId(event)]
     openGoogleCalendarEvent({
       title: event.title,
-      date: eventDate(estimatedDueDate, event.week),
-      description: event.desc || event.title,
+      date: appointment
+        ? new Date(`${appointment.date}T00:00:00`)
+        : eventDate(estimatedDueDate, event.week),
+      time: appointment?.time,
+      location: appointment?.location,
+      description: buildCalendarDescription(event),
     })
     addPlannedEvent(String(event.week))
   }
@@ -278,6 +291,15 @@ function JourneyScreen() {
                     {event.desc}
                   </p>
                 )}
+                {event.type !== 'milestone' && (
+                  <AppointmentStatusBadge
+                    status={getAppointmentStatus(
+                      eventDate(estimatedDueDate, event.week),
+                      appointments[eventId(event)],
+                    )}
+                    appointment={appointments[eventId(event)]}
+                  />
+                )}
                 {isPlanned && (
                   <span className="text-[11px]" style={{ color: 'var(--color-success)' }}>
                     ✓ ביומן
@@ -298,6 +320,13 @@ function JourneyScreen() {
               preparation={selected.preparation}
               onAddToCalendar={() => handleAddToCalendar(selected)}
               onClose={() => setSelected(null)}
+              appointmentSection={
+                <AppointmentEditor
+                  appointment={appointments[eventId(selected)]}
+                  onSave={(data) => setAppointment(eventId(selected), data)}
+                  onMarkDone={() => markDone(eventId(selected))}
+                />
+              }
             />
           ) : (
             <div className="flex flex-col gap-3">

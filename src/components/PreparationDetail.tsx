@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { JourneyPreparation } from '../content/journeyEvents'
 import { DISCLAIMER } from '../lib/calendar'
 
@@ -7,6 +8,7 @@ interface PreparationDetailProps {
   preparation: JourneyPreparation
   onAddToCalendar: () => void
   onClose: () => void
+  appointmentSection?: ReactNode
 }
 
 function PreparationDetail({
@@ -15,6 +17,7 @@ function PreparationDetail({
   preparation,
   onAddToCalendar,
   onClose,
+  appointmentSection,
 }: PreparationDetailProps) {
   return (
     <div className="flex flex-col gap-3">
@@ -52,6 +55,8 @@ function PreparationDetail({
           </p>
         </div>
       )}
+
+      {appointmentSection}
 
       {preparation.partner && (
         <p className="text-sm font-semibold" style={{ color: 'var(--color-success)' }}>

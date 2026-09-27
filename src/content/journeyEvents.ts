@@ -376,3 +376,16 @@ export function eventDate(dueDate: Date, week: number): Date {
     dueDate.getTime() - (TOTAL_PREGNANCY_WEEKS - week) * MS_PER_WEEK,
   )
 }
+
+export function eventId(event: JourneyEvent): string {
+  return `${event.week}-${event.title}`
+}
+
+export function buildCalendarDescription(event: JourneyEvent): string {
+  return [
+    event.desc || event.title,
+    `שבוע הריון: ${event.week}`,
+    'להביא: הפניה, מסמכים רלוונטיים',
+    'Aba',
+  ].join('\n')
+}
