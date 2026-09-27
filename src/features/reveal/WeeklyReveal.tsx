@@ -4,6 +4,7 @@ import { useUserStore } from '../../store/useUserStore'
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion'
 import { revealData } from '../../content/reveal-data'
 import ARCamera from './ARCamera'
+import BabyBlob from './BabyBlob'
 
 const MIN_WEEK = 3
 const MAX_WEEK = 40
@@ -207,18 +208,7 @@ function WeeklyReveal() {
             >
               טוב, בדקנו.
             </p>
-            <p
-              style={{
-                fontSize: 140,
-                lineHeight: 1,
-                animation: reducedMotion
-                  ? 'fadeUp 500ms ease-out both'
-                  : 'revealPop 400ms ease-out both',
-                animationDelay: '300ms',
-              }}
-            >
-              {data.emoji}
-            </p>
+            <BabyBlob sizeCm={data.size_cm} animate={!reducedMotion} />
             <p
               style={{
                 fontSize: 48,
