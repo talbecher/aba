@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCurrentWeek } from '../../hooks/useCurrentWeek'
 import { getDueWeek } from '../../lib/week'
 import { useJourneyPreview } from '../../hooks/useJourneyPreview'
 import { useUserStore } from '../../store/useUserStore'
 import { openGoogleCalendarEvent } from '../../lib/calendar'
-import { tasks } from '../../content/tasks'
 import {
   journeyEvents,
   eventId,
@@ -17,6 +16,7 @@ import BottomSheet from '../../components/BottomSheet'
 import PreparationDetail from '../../components/PreparationDetail'
 import WeeklyReveal from '../reveal/WeeklyReveal'
 import BotanDailyCard from './BotanDailyCard'
+import NextActionCard from './NextActionCard'
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
@@ -44,8 +44,6 @@ function HomeScreen() {
   const setManualWeekOverride = useUserStore(
     (state) => state.setManualWeekOverride,
   )
-  const completedTasks = useUserStore((state) => state.completedTasks)
-  const toggleCompletedTask = useUserStore((state) => state.toggleCompletedTask)
   const addPlannedEvent = useUserStore((state) => state.addPlannedEvent)
   const appointments = useUserStore((state) => state.appointments)
   const showManualWeekNotice = !dueDate && manualWeekOverride !== null
@@ -72,29 +70,10 @@ function HomeScreen() {
   const [weekSlider, setWeekSlider] = useState(manualWeekOverride ?? week)
   const dueDateInputWeek = dueDateInput ? getDueWeek(dueDateInput, null) : null
   const [prepOpen, setPrepOpen] = useState(false)
-  const [taskIndex, setTaskIndex] = useState(0)
 
   const trimester = getTrimester(week)
   const percent = Math.round((week / TOTAL_WEEKS) * 100)
   const remainingWeeks = TOTAL_WEEKS - week
-
-  const relevantTasks = useMemo(
-    () => tasks.filter((t) => t.week_start <= week && week <= t.week_end),
-    [week],
-  )
-  const completedThisWeek = relevantTasks.filter((t) => completedTasks.includes(t.id))
-  const allTasksDone =
-    relevantTasks.length > 0 &&
-    relevantTasks.every((t) => completedTasks.includes(t.id))
-  const totalCompletedCount = completedTasks.filter((id) =>
-    tasks.some((t) => t.id === id),
-  ).length
-  const safeTaskIndex = Math.min(taskIndex, Math.max(0, relevantTasks.length - 1))
-  const currentTask = relevantTasks[safeTaskIndex] ?? null
-
-  useEffect(() => {
-    setTaskIndex(0)
-  }, [week])
 
   const handleSaveWeek = () => {
     if (settingsMode === 'date') {
@@ -445,114 +424,7 @@ function HomeScreen() {
         </button>
       </section>
 
-      <section
-        className="mx-5 rounded-2xl p-4"
-        style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
-      >
-        <h2 className="mb-3 text-sm font-semibold">המשימות שלך השבוע 🎯</h2>
-
-        {/* Progress bar */}
-        <div
-          className="h-[3px] w-full overflow-hidden rounded-full"
-          style={{ backgroundColor: '#1E1E1E' }}
-        >
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: `${completedThisWeek.length && relevantTasks.length ? Math.round((completedThisWeek.length / relevantTasks.length) * 100) : 0}%`,
-              backgroundColor: '#10B981',
-            }}
-          />
-        </div>
-        <p className="mt-1" style={{ fontSize: 11, color: '#555' }}>
-          {completedThisWeek.length} מתוך {relevantTasks.length} משימות השבוע
-        </p>
-
-        {currentTask && !allTasksDone && (
-          <>
-            <div
-              className="mt-3 rounded-xl p-3"
-              style={{ backgroundColor: 'var(--bg-elevated)' }}
-            >
-              <p
-                className="font-bold"
-                style={{
-                  fontSize: 15,
-                  lineHeight: 1.3,
-                  color: completedTasks.includes(currentTask.id) ? '#555' : 'var(--text)',
-                  textDecoration: completedTasks.includes(currentTask.id) ? 'line-through' : 'none',
-                }}
-              >
-                {currentTask.title}
-              </p>
-              <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6, marginTop: 8 }}>
-                {currentTask.description}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                const willBeDone = !completedTasks.includes(currentTask.id)
-                toggleCompletedTask(currentTask.id)
-                if (willBeDone) navigator.vibrate?.([30])
-              }}
-              aria-pressed={completedTasks.includes(currentTask.id)}
-              style={{
-                minHeight: 44,
-                marginTop: 12,
-                width: '100%',
-                backgroundColor: completedTasks.includes(currentTask.id) ? '#10B981' : 'transparent',
-                border: `1px solid ${completedTasks.includes(currentTask.id) ? '#10B981' : '#333'}`,
-                color: completedTasks.includes(currentTask.id) ? '#fff' : '#888',
-              }}
-              className="rounded-xl text-sm font-semibold"
-            >
-              {completedTasks.includes(currentTask.id) ? 'בוצע ✓ — בטל' : 'סיימתי ✓'}
-            </button>
-
-            {relevantTasks.length > 1 && (
-              <div className="mt-2 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setTaskIndex((i) => Math.max(0, i - 1))}
-                  disabled={safeTaskIndex === 0}
-                  style={{ minHeight: 36, borderColor: '#333' }}
-                  className="flex-1 rounded-xl border text-xs font-semibold text-[var(--text-secondary)] disabled:opacity-30"
-                >
-                  → הקודמת
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setTaskIndex((i) => Math.min(relevantTasks.length - 1, i + 1))
-                  }
-                  disabled={safeTaskIndex === relevantTasks.length - 1}
-                  style={{ minHeight: 36, borderColor: '#333' }}
-                  className="flex-1 rounded-xl border text-xs font-semibold text-[var(--text-secondary)] disabled:opacity-30"
-                >
-                  הבאה ←
-                </button>
-              </div>
-            )}
-          </>
-        )}
-
-        {allTasksDone && (
-          <div className="mt-3 flex flex-col items-center gap-2 py-2 text-center">
-            <p style={{ fontSize: 16, fontWeight: 700 }}>
-              כל המשימות השבוע מסומנות ✅
-            </p>
-            <p style={{ fontSize: 14, color: '#888', lineHeight: 1.5 }}>
-              בתכלס, המשימות לא באמת נגמרות. יש תמיד עוד דבר קטן שאפשר לעשות.
-            </p>
-            <p className="mt-1" style={{ fontSize: 12, color: '#555' }}>
-              השלמת {totalCompletedCount} מתוך {tasks.length} משימות לאורך כל
-              ההריון.
-            </p>
-          </div>
-        )}
-      </section>
+      <NextActionCard />
 
       <p style={{ fontSize: 12, color: '#444', textAlign: 'center' }}>
         השבוע הבא: משהו קטן יותר ממה שאתה חושב. נפתח בעוד 7 ימים.
