@@ -16,6 +16,7 @@ import type { Appointment } from '../../types/user'
 import BottomSheet from '../../components/BottomSheet'
 import PreparationDetail from '../../components/PreparationDetail'
 import WeeklyReveal from '../reveal/WeeklyReveal'
+import BotanDailyCard from './BotanDailyCard'
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
@@ -312,6 +313,8 @@ function HomeScreen() {
       )}
 
       <WeeklyReveal />
+
+      <BotanDailyCard />
 
       <section
         className="mx-5 rounded-2xl p-4"
