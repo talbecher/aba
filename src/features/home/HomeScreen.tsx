@@ -127,30 +127,6 @@ function HomeScreen() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[390px] flex-col gap-4 bg-[var(--bg)] pb-24 text-[var(--text)]">
       <header className="flex flex-col gap-2 px-5 pt-4 pb-2">
-        {weekDay && (
-          <div className="flex flex-col items-center pb-1">
-            <p className="mb-1 text-xs tracking-wide text-[var(--text-muted)]">
-              ההריון שלכם היום
-            </p>
-            <div className="flex items-baseline gap-1.5" dir="rtl">
-              <span className="text-4xl font-bold text-accent">שבוע {weekDay.week}</span>
-              {weekDay.dayInWeek > 0 && (
-                <>
-                  <span className="text-2xl font-light text-[var(--text-muted)]">+</span>
-                  <span className="text-3xl font-semibold text-[var(--text-muted)]">
-                    {weekDay.dayInWeek}
-                  </span>
-                </>
-              )}
-            </div>
-            {weekDay.dayInWeek > 0 && (
-              <p className="mt-1 text-xs text-[var(--text-muted)]">
-                יום {weekDay.dayInWeek} מתוך 7 בשבוע זה
-              </p>
-            )}
-          </div>
-        )}
-
         <div className="grid grid-cols-3 items-center">
           <div className="flex items-center gap-1 justify-self-start">
             <button
@@ -313,6 +289,30 @@ function HomeScreen() {
             onClose={() => setAppointmentPrepOpen(false)}
           />
         </BottomSheet>
+      )}
+
+      {weekDay && (
+        <div className="flex flex-col items-center px-5">
+          <p className="mb-1 text-xs tracking-wide text-[var(--text-muted)]">
+            ההריון שלכם היום
+          </p>
+          <div className="flex items-baseline gap-1.5" dir="rtl">
+            <span className="text-4xl font-bold text-accent">שבוע {weekDay.week}</span>
+            {weekDay.dayInWeek > 0 && (
+              <>
+                <span className="text-2xl font-light text-[var(--text-muted)]">+</span>
+                <span className="text-3xl font-semibold text-[var(--text-muted)]">
+                  {weekDay.dayInWeek}
+                </span>
+              </>
+            )}
+          </div>
+          {weekDay.dayInWeek > 0 && (
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              יום {weekDay.dayInWeek} מתוך 7 בשבוע זה
+            </p>
+          )}
+        </div>
       )}
 
       <WeeklyReveal />
