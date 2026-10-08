@@ -40,6 +40,29 @@ export function getEstimatedDueDate(
   return new Date(Date.now() + weeksRemaining * MS_PER_WEEK)
 }
 
+export function getWeekAndDay(
+  dueDate: string | null,
+  manualWeekOverride: number | null,
+): { week: number; dayInWeek: number } | null {
+  if (dueDate) {
+    const due = new Date(dueDate)
+    if (!Number.isNaN(due.getTime())) {
+      const weeksUntilDue = (due.getTime() - Date.now()) / MS_PER_WEEK
+      const continuousWeek = TOTAL_WEEKS - weeksUntilDue
+      const week = clampWeek(Math.floor(continuousWeek))
+      const fraction = Math.min(1, Math.max(0, continuousWeek - Math.floor(continuousWeek)))
+      const dayInWeek = Math.min(7, Math.max(1, Math.floor(fraction * 7) + 1))
+      return { week, dayInWeek }
+    }
+  }
+
+  if (manualWeekOverride !== null) {
+    return { week: clampWeek(manualWeekOverride), dayInWeek: 0 }
+  }
+
+  return null
+}
+
 export function getWeekAtDate(targetDate: Date, dueDate: Date): number {
   const weeksLeftAtTarget = (dueDate.getTime() - targetDate.getTime()) / MS_PER_WEEK
   const week = Math.round(TOTAL_WEEKS - weeksLeftAtTarget)
