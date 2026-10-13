@@ -31,9 +31,11 @@ function FuturePlanner() {
   const today = new Date()
   const todayIso = toISODate(today)
   const effectiveDueDate = getEstimatedDueDate(dueDate, manualWeekOverride)
-  const maxDate = dueDate
+  const maxDateCandidate = dueDate
     ? effectiveDueDate
     : new Date(today.getTime() + TOTAL_WEEKS * MS_PER_WEEK)
+  // אם ההריון עבר את התאריך המשוער, max עלול לצאת לפני min — מה שמונע מהדפדפן לפתוח את בוחר התאריך.
+  const maxDate = maxDateCandidate.getTime() < today.getTime() ? today : maxDateCandidate
 
   const [targetInput, setTargetInput] = useState('')
   const [result, setResult] = useState<Result | null>(null)
