@@ -50,12 +50,14 @@ function AppointmentEditor({ appointment, onSave, onMarkDone }: AppointmentEdito
         <div className="flex flex-col gap-2">
           <input
             type="date"
+            dir="ltr"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             className="w-full rounded-xl border border-neutral-700 bg-neutral-950 p-3 text-neutral-100 focus:border-accent focus:outline-none"
           />
           <input
             type="time"
+            dir="ltr"
             value={time}
             onChange={(e) => setTime(e.target.value)}
             className="w-full rounded-xl border border-neutral-700 bg-neutral-950 p-3 text-neutral-100 focus:border-accent focus:outline-none"

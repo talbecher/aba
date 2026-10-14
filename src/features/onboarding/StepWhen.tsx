@@ -67,6 +67,7 @@ function StepWhen({ onComplete }: StepWhenProps) {
         {method === 'due_date' && (
           <input
             type="date"
+            dir="ltr"
             value={dueDateInput}
             onChange={(e) => setDueDateInput(e.target.value)}
             style={{ minHeight: 48 }}

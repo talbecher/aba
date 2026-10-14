@@ -85,6 +85,7 @@ function NowScreen() {
           <h2 className="text-lg font-bold">עדכן תאריך לידה</h2>
           <input
             type="date"
+            dir="ltr"
             value={dueDateInput}
             onChange={(e) => setDueDateInput(e.target.value)}
             className="w-full rounded-xl border border-neutral-700 bg-neutral-950 p-3 text-neutral-100 focus:border-accent focus:outline-none"

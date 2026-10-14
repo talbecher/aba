@@ -80,6 +80,7 @@ function FuturePlanner() {
       <div className="flex flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
         <input
           type="date"
+          dir="ltr"
           min={todayIso}
           max={toISODate(maxDate)}
           value={targetInput}
