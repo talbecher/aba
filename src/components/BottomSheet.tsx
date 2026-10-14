@@ -16,7 +16,7 @@ function BottomSheet({ open, onClose, children }: BottomSheetProps) {
         onClick={onClose}
         aria-hidden="true"
       />
-      <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[390px] rounded-t-2xl border-t border-neutral-800 bg-neutral-900 p-6 pb-8">
+      <div className="absolute inset-x-0 bottom-0 mx-auto max-h-[85dvh] max-w-[390px] overflow-y-auto rounded-t-2xl border-t border-neutral-800 bg-neutral-900 p-6 pb-8">
         {children}
       </div>
     </div>
