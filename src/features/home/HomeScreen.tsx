@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCurrentWeek } from '../../hooks/useCurrentWeek'
-import { getDueWeek, getWeekAndDay } from '../../lib/week'
+import { getWeekAndDay } from '../../lib/week'
 import { getWeeklyHighlight } from '../../lib/weeklyHighlight'
 import { useJourneyPreview } from '../../hooks/useJourneyPreview'
 import { useUserStore } from '../../store/useUserStore'
@@ -15,6 +15,7 @@ import {
 import type { Appointment } from '../../types/user'
 import BottomSheet from '../../components/BottomSheet'
 import PreparationDetail from '../../components/PreparationDetail'
+import WeekSourceSettings from '../../components/WeekSourceSettings'
 import WeeklyReveal from '../reveal/WeeklyReveal'
 import BotanDailyCard from './BotanDailyCard'
 import NextActionCard from './NextActionCard'
@@ -40,11 +41,9 @@ function HomeScreen() {
   const navigate = useNavigate()
   const week = useCurrentWeek()
   const dueDate = useUserStore((state) => state.due_date)
+  const lmpDate = useUserStore((state) => state.lmp_date)
   const manualWeekOverride = useUserStore((state) => state.manual_week_override)
-  const setDueDate = useUserStore((state) => state.setDueDate)
-  const setManualWeekOverride = useUserStore(
-    (state) => state.setManualWeekOverride,
-  )
+  const manualDayOverride = useUserStore((state) => state.manual_day_override)
   const addPlannedEvent = useUserStore((state) => state.addPlannedEvent)
   const appointments = useUserStore((state) => state.appointments)
   const showManualWeekNotice = !dueDate && manualWeekOverride !== null
@@ -66,29 +65,13 @@ function HomeScreen() {
   }, [appointments])
 
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [settingsMode, setSettingsMode] = useState<'date' | 'week'>(dueDate ? 'date' : 'week')
-  const [dueDateInput, setDueDateInput] = useState(dueDate ?? '')
-  const [weekSlider, setWeekSlider] = useState(manualWeekOverride ?? week)
-  const dueDateInputWeek = dueDateInput ? getDueWeek(dueDateInput, null) : null
   const [prepOpen, setPrepOpen] = useState(false)
 
   const trimester = getTrimester(week)
   const percent = Math.round((week / TOTAL_WEEKS) * 100)
   const remainingWeeks = TOTAL_WEEKS - week
-  const weekDay = getWeekAndDay(dueDate, manualWeekOverride)
+  const weekDay = getWeekAndDay(dueDate, lmpDate, manualWeekOverride, manualDayOverride)
   const highlight = weekDay ? getWeeklyHighlight(weekDay.week) : null
-
-  const handleSaveWeek = () => {
-    if (settingsMode === 'date') {
-      if (!dueDateInput) return
-      setDueDate(dueDateInput)
-      setManualWeekOverride(null)
-    } else {
-      setManualWeekOverride(weekSlider)
-      setDueDate(null)
-    }
-    setSettingsOpen(false)
-  }
 
   const handleAddNextToCalendar = () => {
     if (!next) return
@@ -142,12 +125,7 @@ function HomeScreen() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setDueDateInput(dueDate ?? '')
-                setWeekSlider(manualWeekOverride ?? week)
-                setSettingsMode(dueDate ? 'date' : 'week')
-                setSettingsOpen(true)
-              }}
+              onClick={() => setSettingsOpen(true)}
               aria-label="עדכן שבוע"
               style={{ minHeight: 44, minWidth: 44 }}
               className="flex items-center justify-center text-lg text-[var(--text-secondary)]"
@@ -196,78 +174,7 @@ function HomeScreen() {
       </header>
 
       <BottomSheet open={settingsOpen} onClose={() => setSettingsOpen(false)}>
-        <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-bold">עדכן שבוע</h2>
-          <p className="text-sm text-neutral-400">השבוע הנוכחי: {week}</p>
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setSettingsMode('date')}
-              style={{ minHeight: 44 }}
-              className={`flex-1 rounded-xl border p-3 text-sm font-semibold ${
-                settingsMode === 'date'
-                  ? 'border-accent text-accent'
-                  : 'border-neutral-700 text-neutral-400'
-              }`}
-            >
-              {settingsMode === 'date' ? '◉' : '○'} תאריך לידה משוער
-            </button>
-            <button
-              type="button"
-              onClick={() => setSettingsMode('week')}
-              style={{ minHeight: 44 }}
-              className={`flex-1 rounded-xl border p-3 text-sm font-semibold ${
-                settingsMode === 'week'
-                  ? 'border-accent text-accent'
-                  : 'border-neutral-700 text-neutral-400'
-              }`}
-            >
-              {settingsMode === 'week' ? '◉' : '○'} אני יודע את השבוע
-            </button>
-          </div>
-
-          {settingsMode === 'date' ? (
-            <div className="flex flex-col gap-2">
-              <input
-                type="date"
-                dir="ltr"
-                value={dueDateInput}
-                onChange={(e) => setDueDateInput(e.target.value)}
-                className="w-full rounded-xl border border-neutral-700 bg-neutral-950 p-3 text-neutral-100 focus:border-accent focus:outline-none"
-              />
-              {dueDateInputWeek !== null && (
-                <p className="text-sm text-neutral-400">
-                  לפי התאריך — שבוע {dueDateInputWeek}
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <div className="text-center text-lg font-semibold text-accent">
-                שבוע {weekSlider}
-              </div>
-              <input
-                type="range"
-                min={1}
-                max={40}
-                value={weekSlider}
-                onChange={(e) => setWeekSlider(Number(e.target.value))}
-                className="w-full accent-accent"
-              />
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={handleSaveWeek}
-            disabled={settingsMode === 'date' && !dueDateInput}
-            style={{ minHeight: 44 }}
-            className="w-full rounded-xl bg-accent p-3 font-semibold text-neutral-950 disabled:opacity-40"
-          >
-            שמור
-          </button>
-        </div>
+        <WeekSourceSettings onSaved={() => setSettingsOpen(false)} />
       </BottomSheet>
 
       {next?.preparation && (

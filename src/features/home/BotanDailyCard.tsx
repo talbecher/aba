@@ -1,12 +1,14 @@
 import { botanDailyMessages } from '../../content/botanDailyMessages'
 import { getBotanDay } from '../../lib/botanDay'
+import { resolveDueDateInput } from '../../lib/week'
 import { useUserStore } from '../../store/useUserStore'
 
 function BotanDailyCard() {
   const dueDate = useUserStore((state) => state.due_date)
+  const lmpDate = useUserStore((state) => state.lmp_date)
   const manualWeekOverride = useUserStore((state) => state.manual_week_override)
 
-  const day = getBotanDay(dueDate, manualWeekOverride)
+  const day = getBotanDay(resolveDueDateInput(dueDate, lmpDate), manualWeekOverride)
   if (day === null) return null
 
   const entry = botanDailyMessages.find((m) => m.day === day)

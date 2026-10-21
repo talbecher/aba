@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCurrentWeek } from '../../hooks/useCurrentWeek'
 import { useUserStore } from '../../store/useUserStore'
-import { getEstimatedDueDate } from '../../lib/week'
+import { getEstimatedDueDate, resolveDueDateInput } from '../../lib/week'
 import { openGoogleCalendarEvent, DISCLAIMER } from '../../lib/calendar'
 import { getAppointmentStatus } from '../../lib/eventStatus'
 import {
@@ -15,6 +15,7 @@ import {
 import BottomSheet from '../../components/BottomSheet'
 import PreparationDetail from '../../components/PreparationDetail'
 import AppointmentEditor from '../../components/AppointmentEditor'
+import WeekSourceSettings from '../../components/WeekSourceSettings'
 
 type Filter = 'all' | 'check' | 'task' | 'milestone'
 
@@ -53,9 +54,8 @@ function JourneyScreen() {
   const navigate = useNavigate()
   const week = useCurrentWeek()
   const dueDate = useUserStore((state) => state.due_date)
+  const lmpDate = useUserStore((state) => state.lmp_date)
   const manualWeekOverride = useUserStore((state) => state.manual_week_override)
-  const setDueDate = useUserStore((state) => state.setDueDate)
-  const setManualWeekOverride = useUserStore((state) => state.setManualWeekOverride)
   const plannedEvents = useUserStore((state) => state.plannedEvents)
   const addPlannedEvent = useUserStore((state) => state.addPlannedEvent)
   const appointments = useUserStore((state) => state.appointments)
@@ -65,11 +65,10 @@ function JourneyScreen() {
   const [filter, setFilter] = useState<Filter>('all')
   const [selected, setSelected] = useState<JourneyEvent | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [dueDateInput, setDueDateInput] = useState(dueDate ?? '')
 
   const estimatedDueDate = useMemo(
-    () => getEstimatedDueDate(dueDate, manualWeekOverride),
-    [dueDate, manualWeekOverride],
+    () => getEstimatedDueDate(resolveDueDateInput(dueDate, lmpDate), manualWeekOverride),
+    [dueDate, lmpDate, manualWeekOverride],
   )
 
   const trimester = getTrimester(week)
@@ -94,14 +93,6 @@ function JourneyScreen() {
     filter === 'all'
       ? journeyEvents
       : journeyEvents.filter((event) => event.type === filter)
-
-  const handleSaveDueDate = () => {
-    if (dueDateInput) {
-      setDueDate(dueDateInput)
-      setManualWeekOverride(null)
-    }
-    setSettingsOpen(false)
-  }
 
   const handleAddToCalendar = (event: JourneyEvent) => {
     const appointment = appointments[eventId(event)]
@@ -133,11 +124,8 @@ function JourneyScreen() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setDueDateInput(dueDate ?? '')
-                setSettingsOpen(true)
-              }}
-              aria-label="ערוך תאריך לידה"
+              onClick={() => setSettingsOpen(true)}
+              aria-label="ערוך שיטת חישוב שבוע"
               style={{ minHeight: 44 }}
               className="px-2 text-xs text-[var(--text-secondary)]"
             >
@@ -148,7 +136,7 @@ function JourneyScreen() {
         <p className="text-sm text-[var(--text-secondary)]">
           שבוע {week} · טרימסטר {trimester}
         </p>
-        {dueDate && (
+        {(dueDate || lmpDate) && (
           <p className="text-xs text-[var(--text-secondary)]">
             תאריך לידה משוער: {formatFullDate(estimatedDueDate)}
           </p>
@@ -156,24 +144,7 @@ function JourneyScreen() {
       </header>
 
       <BottomSheet open={settingsOpen} onClose={() => setSettingsOpen(false)}>
-        <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-bold">עדכן תאריך לידה</h2>
-          <input
-            type="date"
-            dir="ltr"
-            value={dueDateInput}
-            onChange={(e) => setDueDateInput(e.target.value)}
-            className="w-full rounded-xl border border-neutral-700 bg-neutral-950 p-3 text-neutral-100 focus:border-accent focus:outline-none"
-          />
-          <button
-            type="button"
-            onClick={handleSaveDueDate}
-            style={{ minHeight: 44 }}
-            className="w-full rounded-xl bg-accent p-3 font-semibold text-neutral-950"
-          >
-            שמור
-          </button>
-        </div>
+        <WeekSourceSettings onSaved={() => setSettingsOpen(false)} />
       </BottomSheet>
 
       <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -204,7 +175,7 @@ function JourneyScreen() {
         {filteredEvents.map((event) => {
           const index = journeyEvents.indexOf(event)
           const status = statusFor(event, index)
-          const hasRealDueDate = dueDate !== null
+          const hasRealDueDate = dueDate !== null || lmpDate !== null
           const dateLabel = hasRealDueDate
             ? formatShortDate(eventDate(estimatedDueDate, event.week))
             : `שבוע ${event.week}`

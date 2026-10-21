@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useUserStore } from '../../store/useUserStore'
-import { getEstimatedDueDate } from '../../lib/week'
+import { getEstimatedDueDate, resolveDueDateInput } from '../../lib/week'
 import { useCurrentWeek } from '../../hooks/useCurrentWeek'
 import BottomSheet from '../../components/BottomSheet'
 import {
@@ -74,12 +74,13 @@ interface MonthColumn {
 
 function TimelineScreen() {
   const dueDate = useUserStore((state) => state.due_date)
+  const lmpDate = useUserStore((state) => state.lmp_date)
   const manualWeekOverride = useUserStore((state) => state.manual_week_override)
   const currentWeek = useCurrentWeek()
 
   const estimatedDueDate = useMemo(
-    () => getEstimatedDueDate(dueDate, manualWeekOverride),
-    [dueDate, manualWeekOverride],
+    () => getEstimatedDueDate(resolveDueDateInput(dueDate, lmpDate), manualWeekOverride),
+    [dueDate, lmpDate, manualWeekOverride],
   )
 
   const columns = useMemo<MonthColumn[]>(() => {
@@ -99,7 +100,7 @@ function TimelineScreen() {
     return [...map.values()]
   }, [estimatedDueDate])
 
-  const hasRealDueDate = dueDate !== null
+  const hasRealDueDate = dueDate !== null || lmpDate !== null
   const [selected, setSelected] = useState<TimelineEvent | null>(null)
   const currentColumnRef = useRef<HTMLDivElement>(null)
 

@@ -5,6 +5,7 @@ import { useWeekContent } from '../../hooks/useWeekContent'
 import { useUserStore } from '../../store/useUserStore'
 import { nowContent } from '../../content/now-content'
 import BottomSheet from '../../components/BottomSheet'
+import WeekSourceSettings from '../../components/WeekSourceSettings'
 import type { Tone } from '../../types/user'
 
 const TOTAL_WEEKS = 40
@@ -14,13 +15,11 @@ function NowScreen() {
   const navigate = useNavigate()
   const week = useCurrentWeek()
   const dueDate = useUserStore((state) => state.due_date)
-  const setDueDate = useUserStore((state) => state.setDueDate)
-  const setManualWeekOverride = useUserStore((state) => state.setManualWeekOverride)
+  const lmpDate = useUserStore((state) => state.lmp_date)
   const { csv, data } = useWeekContent(week)
   const rich = nowContent[week] ?? null
 
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [dueDateInput, setDueDateInput] = useState(dueDate ?? '')
   const [detailsOpen, setDetailsOpen] = useState(false)
 
   const remainingWeeks = TOTAL_WEEKS - week
@@ -29,14 +28,6 @@ function NowScreen() {
   useEffect(() => {
     setDetailsOpen(false)
   }, [week])
-
-  const handleSaveDueDate = () => {
-    if (dueDateInput) {
-      setDueDate(dueDateInput)
-      setManualWeekOverride(null)
-    }
-    setSettingsOpen(false)
-  }
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[390px] flex-col gap-4 bg-[var(--bg)] px-5 pb-24 pt-5 text-[var(--text)]">
@@ -66,13 +57,10 @@ function NowScreen() {
         </div>
       </header>
 
-      {!dueDate && (
+      {!dueDate && !lmpDate && (
         <button
           type="button"
-          onClick={() => {
-            setDueDateInput(dueDate ?? '')
-            setSettingsOpen(true)
-          }}
+          onClick={() => setSettingsOpen(true)}
           style={{ minHeight: 44 }}
           className="rounded-xl bg-[var(--bg-card)] px-3 text-right text-xs text-[var(--text-secondary)]"
         >
@@ -81,24 +69,7 @@ function NowScreen() {
       )}
 
       <BottomSheet open={settingsOpen} onClose={() => setSettingsOpen(false)}>
-        <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-bold">עדכן תאריך לידה</h2>
-          <input
-            type="date"
-            dir="ltr"
-            value={dueDateInput}
-            onChange={(e) => setDueDateInput(e.target.value)}
-            className="w-full rounded-xl border border-neutral-700 bg-neutral-950 p-3 text-neutral-100 focus:border-accent focus:outline-none"
-          />
-          <button
-            type="button"
-            onClick={handleSaveDueDate}
-            style={{ minHeight: 44 }}
-            className="w-full rounded-xl bg-accent p-3 font-semibold text-neutral-950"
-          >
-            שמור
-          </button>
-        </div>
+        <WeekSourceSettings onSaved={() => setSettingsOpen(false)} />
       </BottomSheet>
 
       {rich ? (

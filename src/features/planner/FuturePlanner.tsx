@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserStore } from '../../store/useUserStore'
-import { getEstimatedDueDate, getWeekAtDate } from '../../lib/week'
+import { getEstimatedDueDate, getWeekAtDate, resolveDueDateInput } from '../../lib/week'
 import { nowContent } from '../../content/now-content'
 
 const TOTAL_WEEKS = 40
@@ -26,12 +26,14 @@ type Result =
 function FuturePlanner() {
   const navigate = useNavigate()
   const dueDate = useUserStore((state) => state.due_date)
+  const lmpDate = useUserStore((state) => state.lmp_date)
   const manualWeekOverride = useUserStore((state) => state.manual_week_override)
 
   const today = new Date()
   const todayIso = toISODate(today)
-  const effectiveDueDate = getEstimatedDueDate(dueDate, manualWeekOverride)
-  const maxDateCandidate = dueDate
+  const resolvedDueDate = resolveDueDateInput(dueDate, lmpDate)
+  const effectiveDueDate = getEstimatedDueDate(resolvedDueDate, manualWeekOverride)
+  const maxDateCandidate = resolvedDueDate
     ? effectiveDueDate
     : new Date(today.getTime() + TOTAL_WEEKS * MS_PER_WEEK)
   // אם ההריון עבר את התאריך המשוער, max עלול לצאת לפני min — מה שמונע מהדפדפן לפתוח את בוחר התאריך.

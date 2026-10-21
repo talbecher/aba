@@ -5,7 +5,9 @@ import type { Tone, UserState } from '../types/user'
 interface UserStore extends UserState {
   setTone: (tone: Tone) => void
   setDueDate: (date: string | null) => void
+  setLmpDate: (date: string | null) => void
   setManualWeekOverride: (week: number | null) => void
+  setManualDayOverride: (day: number | null) => void
   setIsFirstBaby: (val: boolean) => void
   toggleAction: (id: string) => void
   completeOnboarding: () => void
@@ -26,7 +28,9 @@ const initialState: UserState = {
   tone: 'bro',
   is_first_baby: true,
   due_date: null,
+  lmp_date: null,
   manual_week_override: null,
+  manual_day_override: null,
   completed_action_ids: [],
   onboarding_completed: false,
   notification_preference: true,
@@ -42,9 +46,30 @@ export const useUserStore = create<UserStore>()(
     (set) => ({
       ...initialState,
       setTone: (tone) => set({ tone }),
-      setDueDate: (due_date) => set({ due_date }),
+      setDueDate: (due_date) =>
+        set(
+          due_date !== null
+            ? { due_date, lmp_date: null, manual_week_override: null, manual_day_override: null }
+            : { due_date },
+        ),
+      setLmpDate: (lmp_date) =>
+        set(
+          lmp_date !== null
+            ? { lmp_date, due_date: null, manual_week_override: null, manual_day_override: null }
+            : { lmp_date },
+        ),
       setManualWeekOverride: (manual_week_override) =>
-        set({ manual_week_override }),
+        set(
+          manual_week_override !== null
+            ? { manual_week_override, due_date: null, lmp_date: null }
+            : { manual_week_override },
+        ),
+      setManualDayOverride: (manual_day_override) =>
+        set(
+          manual_day_override !== null
+            ? { manual_day_override, due_date: null, lmp_date: null }
+            : { manual_day_override },
+        ),
       setIsFirstBaby: (is_first_baby) => set({ is_first_baby }),
       toggleAction: (id) =>
         set((state) => ({

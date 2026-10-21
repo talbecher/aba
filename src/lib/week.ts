@@ -40,12 +40,33 @@ export function getEstimatedDueDate(
   return new Date(Date.now() + weeksRemaining * MS_PER_WEEK)
 }
 
+// ממיר תאריך וסת אחרונה לתאריך לידה משוער שווה-ערך (LMP + 280 יום),
+// כך שכל חישוב השבוע באפליקציה (כולל getDueWeek/getEstimatedDueDate) ממשיך
+// לעבור בנוסחה האחידה הקיימת — ולא נוצרת סתירה בין LMP ל-EDD במסכים שונים.
+export function resolveDueDateInput(
+  dueDate: string | null,
+  lmpDate: string | null,
+): string | null {
+  if (lmpDate) {
+    const lmp = new Date(lmpDate)
+    if (!Number.isNaN(lmp.getTime())) {
+      const edd = new Date(lmp.getTime() + CONCEPTION_TO_DUE_DAYS * 24 * 60 * 60 * 1000)
+      return edd.toISOString().slice(0, 10)
+    }
+  }
+  return dueDate
+}
+
 export function getWeekAndDay(
   dueDate: string | null,
+  lmpDate: string | null,
   manualWeekOverride: number | null,
+  manualDayOverride: number | null,
 ): { week: number; dayInWeek: number } | null {
-  if (dueDate) {
-    const due = new Date(dueDate)
+  const effectiveDueDate = resolveDueDateInput(dueDate, lmpDate)
+
+  if (effectiveDueDate) {
+    const due = new Date(effectiveDueDate)
     if (!Number.isNaN(due.getTime())) {
       const weeksUntilDue = (due.getTime() - Date.now()) / MS_PER_WEEK
       const continuousWeek = TOTAL_WEEKS - weeksUntilDue
@@ -57,7 +78,7 @@ export function getWeekAndDay(
   }
 
   if (manualWeekOverride !== null) {
-    return { week: clampWeek(manualWeekOverride), dayInWeek: 0 }
+    return { week: clampWeek(manualWeekOverride), dayInWeek: manualDayOverride ?? 0 }
   }
 
   return null

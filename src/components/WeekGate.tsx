@@ -9,6 +9,7 @@ interface WeekGateProps {
 
 function WeekGate({ children }: WeekGateProps) {
   const dueDate = useUserStore((state) => state.due_date)
+  const lmpDate = useUserStore((state) => state.lmp_date)
   const manualWeekOverride = useUserStore((state) => state.manual_week_override)
   const setDueDate = useUserStore((state) => state.setDueDate)
   const setManualWeekOverride = useUserStore(
@@ -19,7 +20,7 @@ function WeekGate({ children }: WeekGateProps) {
   const [weekSlider, setWeekSlider] = useState(20)
   const [dueDateInput, setDueDateInput] = useState('')
 
-  if (dueDate !== null || manualWeekOverride !== null) {
+  if (dueDate !== null || lmpDate !== null || manualWeekOverride !== null) {
     return <>{children}</>
   }
 

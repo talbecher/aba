@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useUserStore } from '../store/useUserStore'
-import { getEstimatedDueDate } from '../lib/week'
+import { getEstimatedDueDate, resolveDueDateInput } from '../lib/week'
 import { journeyEvents, eventDate, type JourneyEvent } from '../content/journeyEvents'
 
 const NEXT_EVENT_WINDOW_DAYS = 21
@@ -12,11 +12,12 @@ export interface NextEvent extends JourneyEvent {
 
 export function useNextEvent(): NextEvent | null {
   const dueDate = useUserStore((state) => state.due_date)
+  const lmpDate = useUserStore((state) => state.lmp_date)
   const manualWeekOverride = useUserStore((state) => state.manual_week_override)
 
   const estimatedDueDate = useMemo(
-    () => getEstimatedDueDate(dueDate, manualWeekOverride),
-    [dueDate, manualWeekOverride],
+    () => getEstimatedDueDate(resolveDueDateInput(dueDate, lmpDate), manualWeekOverride),
+    [dueDate, lmpDate, manualWeekOverride],
   )
 
   return useMemo(() => {
