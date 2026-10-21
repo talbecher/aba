@@ -465,6 +465,16 @@ function HomeScreen() {
 
       <NextActionCard />
 
+      <button
+        type="button"
+        onClick={() => navigate('/planner')}
+        style={{ minHeight: 44, border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
+        className="mx-5 flex items-center justify-between rounded-2xl p-4 text-sm font-semibold text-[var(--text)]"
+      >
+        <span>📅 מה יהיה אז?</span>
+        <span className="text-[var(--text-secondary)]">←</span>
+      </button>
+
       <p style={{ fontSize: 12, color: '#444', textAlign: 'center' }}>
         השבוע הבא: משהו קטן יותר ממה שאתה חושב. נפתח בעוד 7 ימים.
       </p>
