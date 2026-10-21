@@ -42,6 +42,7 @@ function WeeklyReveal() {
   const reducedMotion = usePrefersReducedMotion()
 
   const [phase, setPhase] = useState<Phase>('teaser')
+  const [revealed, setRevealed] = useState(false)
   const [showStats, setShowStats] = useState(false)
   const [showButtons, setShowButtons] = useState(false)
   const [collectionView, setCollectionView] = useState<CollectionView>('summary')
@@ -51,6 +52,7 @@ function WeeklyReveal() {
 
   useEffect(() => {
     setPhase('teaser')
+    setRevealed(false)
     setShowStats(false)
     setShowButtons(false)
     setCollectionView('summary')
@@ -84,7 +86,7 @@ function WeeklyReveal() {
     setShowStats(false)
     setShowButtons(false)
     setPhase('reveal')
-    addRevealedWeek(week)
+    setRevealed(true)
   }
 
   const handleTapReveal = () => {
@@ -100,7 +102,7 @@ function WeeklyReveal() {
       }}
     >
       {phase === 'teaser' &&
-        (revealedWeeks.includes(week) ? (
+        (revealed ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 px-8 py-10 text-center">
             <p style={{ fontSize: 11, color: '#555' }}>שבוע {week} · נחשף ✓</p>
             <p style={{ fontSize: 48, textAlign: 'center' }}>{data.emoji}</p>
@@ -162,17 +164,23 @@ function WeeklyReveal() {
             <button
               type="button"
               onClick={handleStartReveal}
+              aria-label="לחץ לחשיפה"
               style={{
+                width: 96,
+                height: 96,
+                borderRadius: '50%',
                 backgroundColor: '#F59E0B',
-                color: '#0A0A0A',
-                fontWeight: 900,
-                padding: '14px 32px',
-                borderRadius: 50,
+                fontSize: 36,
                 minHeight: 44,
+                animation: reducedMotion ? 'none' : 'blobPulse 2s ease-in-out infinite',
               }}
+              className="flex items-center justify-center transition-transform duration-150 active:scale-95"
             >
-              יאללה, תראה 👀
+              🤰
             </button>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>
+              לחץ לחשיפה 👇
+            </p>
             <p style={{ fontSize: 11, color: '#333', marginTop: 20 }}>
               ההשוואה הבאה בעוד {NEXT_COMPARISON_DAYS} ימים.
             </p>
@@ -208,13 +216,37 @@ function WeeklyReveal() {
             >
               טוב, בדקנו.
             </p>
-            <BabyBlob sizeCm={data.size_cm} animate={!reducedMotion} />
+            <div className="relative flex items-center justify-center" style={{ width: 200, height: 200 }}>
+              {!reducedMotion && (
+                <span
+                  aria-hidden="true"
+                  className="absolute rounded-full"
+                  style={{
+                    width: 160,
+                    height: 160,
+                    backgroundColor: '#F59E0B',
+                    animation: 'revealBurst 300ms ease-out both',
+                  }}
+                />
+              )}
+              <div
+                style={{
+                  animation: reducedMotion
+                    ? 'none'
+                    : 'blobEntrance 500ms cubic-bezier(0.34,1.56,0.64,1) both',
+                  animationDelay: reducedMotion ? '0ms' : '150ms',
+                }}
+              >
+                <BabyBlob sizeCm={data.size_cm} animate={!reducedMotion} />
+              </div>
+            </div>
             <p
               style={{
                 fontSize: 48,
                 fontWeight: 900,
                 color: '#fff',
-                ...fadeUp(700),
+                animation: reducedMotion ? 'none' : 'fadeSlideUp 400ms ease-out both',
+                animationDelay: reducedMotion ? '0ms' : '500ms',
               }}
             >
               {data.name}
@@ -225,7 +257,8 @@ function WeeklyReveal() {
                 fontSize: 18,
                 color: '#888',
                 fontStyle: 'italic',
-                ...fadeUp(900),
+                animation: reducedMotion ? 'none' : 'fadeSlideUp 400ms ease-out both',
+                animationDelay: reducedMotion ? '0ms' : '500ms',
               }}
             >
               {data.punch}
