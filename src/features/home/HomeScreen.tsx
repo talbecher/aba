@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCurrentWeek } from '../../hooks/useCurrentWeek'
 import { getDueWeek, getWeekAndDay } from '../../lib/week'
+import { getWeeklyHighlight } from '../../lib/weeklyHighlight'
 import { useJourneyPreview } from '../../hooks/useJourneyPreview'
 import { useUserStore } from '../../store/useUserStore'
 import { openGoogleCalendarEvent } from '../../lib/calendar'
@@ -75,6 +76,7 @@ function HomeScreen() {
   const percent = Math.round((week / TOTAL_WEEKS) * 100)
   const remainingWeeks = TOTAL_WEEKS - week
   const weekDay = getWeekAndDay(dueDate, manualWeekOverride)
+  const highlight = weekDay ? getWeeklyHighlight(weekDay.week) : null
 
   const handleSaveWeek = () => {
     if (settingsMode === 'date') {
@@ -313,6 +315,18 @@ function HomeScreen() {
               יום {weekDay.dayInWeek} מתוך 7 בשבוע זה
             </p>
           )}
+        </div>
+      )}
+
+      {highlight && (
+        <div
+          className="mx-5 rounded-2xl p-4"
+          style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
+        >
+          <p className="mb-1 text-xs text-[var(--text-muted)]">מה קורה אצלי השבוע</p>
+          <p className="text-sm leading-relaxed text-[var(--text)]" dir="rtl">
+            {highlight}
+          </p>
         </div>
       )}
 
